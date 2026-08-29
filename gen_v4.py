@@ -16,7 +16,7 @@ HTML = r'''<meta charset="utf-8"><title>Ruche · Central Financeira</title>
  --bg:#0B100E;--card:#141B17;--sunk:#101614;--ink:#E9F0EC;--mut:#93A09A;--fnt:#75817B;--ln:#212B26;--ln2:#2E3A34;--acc:#4FB79C;--acc2:#7ED0B9;--asf:#132420;
  --rev:#22c98d;--exp:#e0574d;--goal:#E0A93F;--nt:#7B877F;--plan:#3987e5;--up:#5BC08C;--ups:#12241A;--dn:#E0705B;--dns:#291410;--wr:#E0A93F;--wrs:#28210F;--redrow:#3A1912;--redrow2:#431E16;--sh:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.4);}}
 :root[data-theme="dark"]{color-scheme:dark;--bg:#0B100E;--card:#141B17;--sunk:#101614;--ink:#E9F0EC;--mut:#93A09A;--fnt:#75817B;--ln:#212B26;--ln2:#2E3A34;--acc:#4FB79C;--acc2:#7ED0B9;--asf:#132420;--rev:#22c98d;--exp:#e0574d;--goal:#E0A93F;--nt:#7B877F;--plan:#3987e5;--up:#5BC08C;--ups:#12241A;--dn:#E0705B;--dns:#291410;--wr:#E0A93F;--wrs:#28210F;--redrow:#3A1912;--redrow2:#431E16;--sh:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.4);}
-*{box-sizing:border-box}body{margin:0}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg)}
 .w{background:var(--bg);color:var(--ink);font-family:var(--ss);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased;padding:26px 16px 60px}
 .p{max-width:1180px;margin:0 auto}
 h1,h2,h3{font-family:var(--sf);font-weight:600;margin:0;text-wrap:balance}
@@ -103,6 +103,7 @@ table.mj input.ce,table.mj select.ce{font:12px var(--ss);color:var(--ink);backgr
     </div>
     <div style="margin-top:8px;display:flex;gap:8px;justify-content:flex-end;align-items:center;flex-wrap:wrap">
       <span class="dirty" id="dirty"></span>
+      <button class="btn" id="themebtn" title="Alternar tema claro/escuro" aria-label="Tema" style="cursor:pointer">🌙</button>
       <label class="btn" for="impfile" style="cursor:pointer">Importar CSV</label>
       <button class="btn" id="exp">Exportar CSV</button>
       <button class="btn" id="disc" style="display:none">Descartar edições</button>
@@ -140,9 +141,7 @@ table.mj input.ce,table.mj select.ce{font:12px var(--ss);color:var(--ink);backgr
 <div class="pane" id="pane-fdc" hidden>
   <sec><div class="sh2"><h2>Fluxo de Caixa</h2><div class="r"></div></div><p class="sub" id="fdcsub"></p>
     <div class="natg" id="natg"></div>
-    <div class="stw"><table class="st" id="fdct"><thead><tr><th>Natureza</th><th class="n">Entradas</th><th class="n">Saídas</th><th class="n">Líquido</th></tr></thead><tbody></tbody></table></div>
-    <div class="sh2" style="margin-top:22px"><h2>Por conta</h2><div class="r"></div></div>
-    <div class="stw"><table class="st" id="acct"><thead><tr><th>Conta</th><th class="n">Entradas</th><th class="n">Saídas</th><th class="n">Líquido</th></tr></thead><tbody></tbody></table></div>
+    <div class="stw"><table class="st" id="fdct"><thead><tr><th>Conta de caixa</th><th class="n">Entradas</th><th class="n">Saídas</th><th class="n">Líquido</th></tr></thead><tbody></tbody></table></div>
     <div class="co"><p id="transfnote"></p></div></sec>
 </div>
 
@@ -263,11 +262,11 @@ const TOTKEY=[['GROSS REVENUE','gross_revenue'],['NET REVENUE','net_revenue'],['
 function lineVal(l,D){const c=l.code;if(l.lvl==='item')return D.items[c]||0;if(/^\d+$/.test(c))return D.F[c]||0;if(/^\d+\.\d+$/.test(c)){let s=0;for(const k in D.items)if(k.indexOf(c+'.')===0)s+=D.items[k];return r2(s);}const up=l.name.toUpperCase();for(const t of TOTKEY)if(up.indexOf(t[0])>=0)return D.agg[t[1]];return null;}
 function natOf(c){const f=c.split('.')[0];if('123456789'.indexOf(f)>=0&&f!=='')return 'op';if(f==='10')return 'inv';return 'fin';}
 function fdcForB(b){
-  const rows=P.mj.filter(r=>empOk(r)&&inR(r.av||r.pd,b));
-  const nat={op:[0,0],inv:[0,0],fin:[0,0]},acc={},transf=[0,0];
-  for(const r of rows){const c=codeOf(r.ct),a=r.ac||'—';acc[a]=acc[a]||[0,0];acc[a][0]+=r.i;acc[a][1]+=r.o;if(c==='12.3.1'){transf[0]+=r.i;transf[1]+=r.o;continue;}const k=natOf(c);nat[k][0]+=r.i;nat[k][1]+=r.o;}
-  const ti=nat.op[0]+nat.inv[0]+nat.fin[0],to=nat.op[1]+nat.inv[1]+nat.fin[1];
-  return {nat:{op:[r2(nat.op[0]),r2(nat.op[1])],inv:[r2(nat.inv[0]),r2(nat.inv[1])],fin:[r2(nat.fin[0]),r2(nat.fin[1])]},transf:[r2(transf[0]),r2(transf[1])],tot:[r2(ti),r2(to),r2(ti-to)],acc:Object.keys(acc).map(a=>({a,in:r2(acc[a][0]),out:r2(acc[a][1]),net:r2(acc[a][0]-acc[a][1])})).sort((x,y)=>Math.abs(y.net)-Math.abs(x.net))};
+  // FDC = posição de caixa por CONTA (igual à planilha): contas de caixa (exclui cartão de crédito), pela payment date, em USD.
+  const rows=P.mj.filter(r=>empOk(r)&&(r.ac||'')&&!/cart[ãa]o/i.test(r.ac||'')&&inR(r.pd,b));
+  const acc={};let ti=0,to=0;
+  for(const r of rows){const a=r.ac||'—';acc[a]=acc[a]||[0,0];acc[a][0]+=(r.i||0);acc[a][1]+=(r.o||0);ti+=(r.i||0);to+=(r.o||0);}
+  return {tot:[r2(ti),r2(to),r2(ti-to)],acc:Object.keys(acc).map(a=>({a,in:r2(acc[a][0]),out:r2(acc[a][1]),net:r2(acc[a][0]-acc[a][1])})).sort((x,y)=>Math.abs(y.net)-Math.abs(x.net))};
 }
 function bucket(c){if(c.indexOf('3.4')===0||c.indexOf('3.3')===0)return 'Entrega (time)';if(c.indexOf('3.')===0)return 'Entrega (gateway/CRM)';if(c.indexOf('4.1')===0)return 'Folha fixa';if(c.indexOf('4.2')===0)return 'Ferramentas';if(c.indexOf('5.1')===0)return 'Marketing';if(c.indexOf('5.2')===0||c.indexOf('5.3')===0)return 'Overhead';if(c.indexOf('2.')===0)return 'Deduções/perdas';if(c.indexOf('8.')===0)return 'Financeiro';if(c.indexOf('9.')===0)return 'Impostos';return 'Outros';}
 function resumoForB(b){
@@ -310,11 +309,11 @@ function renderDRE(){const Ds={};MONTHS.forEach(m=>Ds[m]=dreFor(m));const Dsel=d
     return '<tr class="'+cls+'"><td>'+(l.code?'<span class="cd">'+l.code+'</span>':'')+l.name+'</td>'+(range?cell(Dsel,true):'')+cell(Ds['2026-05'])+cell(Ds['2026-06'])+cell(Ds['2026-07'])+cell(Ds['2026-08'])+'<td class="n" style="color:var(--fnt)">'+(vc?pct.toFixed(1).replace('.',',')+'%':'—')+'</td></tr>';}).join('');
   if(!range)document.querySelectorAll('#dret thead th').forEach((th,i)=>{if(i>=1&&i<=4){const m=MONTHS[i-1];th.style.color=(m===cur)?cv('--acc'):'';th.style.fontWeight=(m===cur)?'800':'';}});}
 /* ===== FDC ===== */
-function renderFDC(){const F=fdcCur();document.getElementById('fdcsub').textContent='Empresa: '+curEmp+' · '+curLabel()+' · regime de caixa, pela data disponível (Available; = Payment Date exceto na Stripe).';const NAT=[['op','Operacional','o dia a dia do negócio'],['inv','Investimento','compra de ativo'],['fin','Financiamento','empréstimo, aporte, distribuição']];
-  document.getElementById('natg').innerHTML=NAT.map(x=>{const v=F.nat[x[0]]||[0,0],net=v[0]-v[1];return '<div class="nat"><div class="t">'+x[1]+'</div><div class="v" style="color:'+(net>=0?cv('--up'):cv('--dn'))+'">'+f0(net)+'</div><div class="d">'+f0(v[0])+' entrou · '+f0(v[1])+' saiu</div><div class="d" style="color:var(--mut)">'+x[2]+'</div></div>';}).join('');
-  document.querySelector('#fdct tbody').innerHTML=NAT.map(x=>{const v=F.nat[x[0]]||[0,0],net=v[0]-v[1];return '<tr><td>'+x[1]+'</td><td class="n">'+f0(v[0])+'</td><td class="n">'+f0(v[1])+'</td><td class="n '+(net>=0?'pos':'neg')+'">'+f0(net)+'</td></tr>';}).join('')+'<tr class="tot"><td>Caixa líquido</td><td class="n">'+f0(F.tot[0])+'</td><td class="n">'+f0(F.tot[1])+'</td><td class="n '+(F.tot[2]>=0?'pos':'neg')+'">'+f0(F.tot[2])+'</td></tr>';
-  document.querySelector('#acct tbody').innerHTML=F.acc.map(a=>'<tr><td><b>'+esc(a.a)+'</b></td><td class="n">'+f0(a['in'])+'</td><td class="n">'+f0(a.out)+'</td><td class="n '+(a.net>=0?'pos':'neg')+'">'+f0(a.net)+'</td></tr>').join('');
-  document.getElementById('transfnote').innerHTML='<b>Transferências entre contas próprias: '+f0(F.transf[0])+'.</b> Aparecem na tabela por conta, mas ficam fora do caixa consolidado.';}
+function renderFDC(){const F=fdcCur();document.getElementById('fdcsub').textContent='Empresa: '+curEmp+' · '+curLabel()+' · posição de caixa por conta, pela Payment Date (igual à aba FDC da planilha).';
+  const cards=[['Entradas',F.tot[0],'var(--up)'],['Saídas',F.tot[1],'var(--dn)'],['Caixa líquido do período',F.tot[2],F.tot[2]>=0?'var(--up)':'var(--dn)']];
+  document.getElementById('natg').innerHTML=cards.map(c=>'<div class="nat"><div class="t">'+c[0]+'</div><div class="v" style="color:'+c[2]+'">'+f0(c[1])+'</div></div>').join('');
+  document.querySelector('#fdct tbody').innerHTML=F.acc.map(a=>'<tr><td><b>'+esc(a.a)+'</b></td><td class="n">'+f0(a['in'])+'</td><td class="n">'+f0(a.out)+'</td><td class="n '+(a.net>=0?'pos':'neg')+'">'+f0(a.net)+'</td></tr>').join('')+'<tr class="tot"><td>Consolidado (contas de caixa)</td><td class="n">'+f0(F.tot[0])+'</td><td class="n">'+f0(F.tot[1])+'</td><td class="n '+(F.tot[2]>=0?'pos':'neg')+'">'+f0(F.tot[2])+'</td></tr>';
+  document.getElementById('transfnote').innerHTML='Cálculo idêntico à aba <b>FDC</b> da planilha: por conta de caixa, pela <b>Payment Date</b>, em USD. Cartão de crédito não é conta de caixa — o caixa sai quando a fatura é paga pela conta corrente. Transferências entre contas próprias aparecem em cada conta e se anulam no consolidado.';}
 
 /* ===== MASTER JOURNAL ===== */
 let mjSort='pd',mjDir=-1,mjOnlyBad=false,mjSel=new Set();
@@ -532,6 +531,11 @@ document.getElementById('impcancel').addEventListener('click',closeImport);
 document.getElementById('exp').addEventListener('click',async()=>{const cols=['Date Added','Name','Payment Method','Outflow (USD)','Inflow (USD)','Currency (BRL)','Chart of Accounts','Account','Empresa','Due Date','Payment Date','Available','Period','Notes','Reconciled'];const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';const lines=[cols.join(',')];P.mj.forEach(r=>lines.push([r.da,r.nm,r.pm,r.o,r.i,r.b,r.ct,r.ac,r.emp,r.du,r.pd,r.av,r.pe,r.nt,r.rc].map(q).join(',')));const csv='﻿'+lines.join('\n');const dl=await (window.claude&&claude.use?claude.use('downloads'):Promise.resolve(null));if(dl){try{await dl.save({filename:'Master_Journal_Ruche.csv',data:csv});}catch(e){if(e&&e.code==='extension_not_enabled'){try{await dl.save({filename:'Master_Journal_Ruche.txt',data:csv});}catch(e2){if(e2&&e2.code!=='declined')toast('Não foi possível salvar: '+(e2.message||e2.code||e2));}}else if(e&&e.code!=='declined')toast('Não foi possível salvar: '+(e.message||e.code||e));}}else{try{const b=new Blob([csv],{type:'text/csv'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='Master_Journal_Ruche.csv';a.click();URL.revokeObjectURL(u);}catch(e){}}});
 let _discArm=false,_discT;document.getElementById('disc').addEventListener('click',()=>{const b=document.getElementById('disc');if(!_discArm){_discArm=true;b.textContent='Confirmar descarte?';toast('Clique de novo para descartar todas as edições e importações.');_discT=setTimeout(()=>{_discArm=false;b.textContent='Descartar edições';},4000);return;}clearTimeout(_discT);EDITS={};try{localStorage.removeItem('ruche_mj_edits');localStorage.removeItem('ruche_mj_imports');}catch(e){}location.reload();});
 matchMedia('(prefers-color-scheme:dark)').addEventListener('change',renderActive);new MutationObserver(renderActive).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+(function(){var KEY='ruche_theme';function eff(){var t=document.documentElement.getAttribute('data-theme');if(t)return t;return matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';}
+ function setIcon(){var b=document.getElementById('themebtn');if(b)b.textContent=eff()==='dark'?'☀️':'🌙';}
+ try{var s=localStorage.getItem(KEY);if(s==='light'||s==='dark')document.documentElement.setAttribute('data-theme',s);}catch(e){}
+ setIcon();
+ var b=document.getElementById('themebtn');if(b)b.addEventListener('click',function(){var n=eff()==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',n);try{localStorage.setItem(KEY,n);}catch(e){}setIcon();});})();
 recomputeFlags();buildHist();markDirty();renderResumo();addEventListener('resize',ht);
 </script>'''
 base=HTML.replace('__PAYLOAD__',DATA)
