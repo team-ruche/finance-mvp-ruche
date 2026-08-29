@@ -1,9 +1,12 @@
 // ===== Ruche importador universal — lógica portada do dashboard (regras dos handoffs) =====
 // Exporta runImport(rows2d, filename) -> { account, bank, rows:[MJ rows] }
 // PTAX e plano são injetados como globais PTAX e PLANO (no n8n ficam inline; aqui via require).
-function buildImporter(PTAX, PLANO, HISTCAT){
-  HISTCAT = HISTCAT || {};
+function buildImporter(PTAX, PLANO, HISTCAT, HISTNOTES){
+  HISTCAT = HISTCAT || {}; HISTNOTES = HISTNOTES || {};
   function normName(nm){var s=(nm||'').toLowerCase();s=s.replace(/zelle payment (from|to)/g,' ').replace(/conf#\s*\w+/g,' ').replace(/\bmobile purchase\b|\bpurchase\b|\bwithdrwl\b|\bwithdrawal\b/g,' ').replace(/\bfor\b\s+"[^"]*"/g,' ').replace(/\d{2}\/\d{2}(\/\d{2,4})?/g,' ').replace(/[*#]/g,' ').replace(/\s+/g,' ').trim();return s;}
+  function keynorm(s){s=(s||'').toLowerCase();s=s.replace(/\b\d[\d.\-/]*\b/g,' ').replace(/[·|].*$/,'').replace(/[^a-zà-ú ]/g,' ').replace(/\s+/g,' ').trim();return s;}
+  function titlecase(s){s=String(s||'').toLowerCase().replace(/\s*\b(ltda|llc|inc|s\/a|sa|me|epp)\b\.?/gi,'').replace(/\b([a-zà-ú])/g,function(m,c){return c.toUpperCase();}).replace(/\s+/g,' ').trim();return s;}
+  function refine(row){var k=keynorm(row.nt)||keynorm(row.nm);var h=k&&HISTNOTES[k];if(h){if(h.nm)row.nm=h.nm;if(h.ct&&PLANO.indexOf(h.ct)>=0)row.ct=h.ct;if(h.pm)row.pm=h.pm;}return row;}
   function r2(n){return Math.round((n+Number.EPSILON)*100)/100;}
   function pad2(n){return String(n).padStart(2,'0');}
   var _MON={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12,fev:2,abr:4,mai:5,ago:8,set:9,out:10,dez:12};
@@ -20,7 +23,7 @@ function buildImporter(PTAX, PLANO, HISTCAT){
   function pmBoA(nm){nm=(nm||'').toLowerCase();if(/zelle/.test(nm))return 'Zelle';if(/atm|withdrwl|withdrawal/.test(nm))return 'ATM';if(/\btransfer\b/.test(nm))return 'Wire Transfer';if(/purchase|mobile/.test(nm))return 'Debit Card';return '';}
   function pmUniCC(nm){nm=(nm||'').toLowerCase();if(/pix/.test(nm))return 'Pix';if(/ted|tef|transferencia/.test(nm))return 'Transferência';if(/boleto|titulo|liquidacao/.test(nm))return 'Boleto';if(/pagamento|debito/.test(nm))return 'Débito';if(/credito|recebimento/.test(nm))return 'Crédito';return '';}
   function guessAccount(fn){fn=(fn||'').toLowerCase();if(/unicred|sicredi/.test(fn)){if(/cart|fatura/.test(fn))return 'Unicred - Cartão';if(/invest|rdc|rentab/.test(fn))return 'Unicred - Invest';return 'Unicred - CC';}if(/c6/.test(fn)){if(/cart|fatura/.test(fn))return 'C6 - Cartão';return 'C6 - CC';}if(/boa|bank ?of ?america|bofa/.test(fn))return 'BoA';if(/payoneer|payoner/.test(fn))return 'Payoneer';if(/wise/.test(fn))return 'Wise - Cris';if(/stripe/.test(fn))return 'Stripe';if(/asaas/.test(fn))return 'Asaas';return null;}
-  var KWRULES=[[/arranjo debito|arranjo débito|cred dom|stripe brasil/i,'12.3.1 - Inter-Account Transfers'],[/pagamento fatura|pag fatura|pgto fatura|pagamento recebido|pagamento de fatura/i,'12.3.1 - Inter-Account Transfers'],[/facebook|facebk|meta ?ads/i,'5.1.1 - Paid Traffic — Ruche Acquisition'],[/highlevel|gohighlevel|ghl/i,'3.1.2 - CRM - usage-based'],[/twilio|sonetel/i,'3.1.1 - Twilio / Telephony'],[/openai|anthropic|claude|chatgpt|manus/i,'4.2.4 - AI Tools'],[/google workspace|hostinger|lovable|hetzner|dicloak/i,'4.2.5 - Infrastructure / Technology'],[/\biof\b/i,'5.2.18 - Card IOF'],[/aluguel|\brent\b/i,'5.2.1 - Rent'],[/contabil|accounting|ferreira/i,'5.2.8 - Accounting'],[/simples nacional/i,'2.4.1 - Simples Nacional / DAS'],[/stripe/i,'3.2.1 - Stripe Fees','out']];
+  var KWRULES=[[/arranjo debito|arranjo débito|cred dom|stripe brasil/i,'12.3.1 - Inter-Account Transfers'],[/pagamento fatura|pag fatura|pgto fatura|pagamento recebido|pagamento de fatura/i,'12.3.1 - Inter-Account Transfers'],[/ruche digital/i,'12.3.1 - Inter-Account Transfers'],[/taxa de (boleto|mensageria|cart|pix|transfer)/i,'3.2.4 - Other Gateway Fees','out'],[/facebook|facebk|meta ?ads/i,'5.1.1 - Paid Traffic — Ruche Acquisition'],[/highlevel|gohighlevel|ghl/i,'3.1.2 - CRM - usage-based'],[/twilio|sonetel/i,'3.1.1 - Twilio / Telephony'],[/openai|anthropic|claude|chatgpt|manus/i,'4.2.4 - AI Tools'],[/google workspace|hostinger|lovable|hetzner|dicloak/i,'4.2.5 - Infrastructure / Technology'],[/\biof\b/i,'5.2.18 - Card IOF'],[/aluguel|\brent\b/i,'5.2.1 - Rent'],[/contabil|accounting|ferreira/i,'5.2.8 - Accounting'],[/simples nacional/i,'2.4.1 - Simples Nacional / DAS'],[/stripe/i,'3.2.1 - Stripe Fees','out']];
   function classify(nm,nt,inflow){var cat=null;
     var raw=(nm||'').trim().toLowerCase(),n=normName(nm);
     if(HISTCAT[raw])cat=HISTCAT[raw];else if(n&&HISTCAT[n])cat=HISTCAT[n];
@@ -39,7 +42,14 @@ function buildImporter(PTAX, PLANO, HISTCAT){
     return {bank:'generic',h:-1,acc:guessAccount(fname)};}
   function parseBoA(rows,h){var out=[];for(var i=h+1;i<rows.length;i++){var r=rows[i];if(!r)continue;var amt=pnum(r[2]);if(amt==null)continue;var dt=pdate(r[0],'mdy');if(!dt)continue;var nm=String(r[1]==null?'':r[1]).trim();var row=mkrow({ac:'BoA',pm:pmBoA(nm),da:dt,pe:dt,du:dt,pd:dt,av:dt});var isIn=setUSD(row,amt,dt);row.nm=nm;row.ct=classify(nm,'',isIn);out.push(row);}return out;}
   function parsePayoneer(rows,h){var H=rows[h];var cD=colIdx(H,['date']),cN=colIdx(H,['description']),cA=colIdx(H,['amount']),cC=colIdx(H,['currency']),cT=colIdx(H,['transaction id','transaction']);var out=[];for(var i=h+1;i<rows.length;i++){var r=rows[i];if(!r)continue;var amt=pnum(r[cA]);if(amt==null)continue;var dt=pdate(r[cD],'dmy');if(!dt)continue;var nm=String((cN>=0?r[cN]:'')||'').trim();var cur=cC>=0?String(r[cC]||'').toUpperCase():'USD';var txn=cT>=0?String(r[cT]||'').trim():'';var row=mkrow({ac:'Payoneer',pm:'Payoneer',da:dt,pe:dt,du:dt,pd:dt,av:dt,nt:txn});var isIn=(cur==='BRL')?setBRL(row,amt,dt):setUSD(row,amt,dt);row.nm=nm;row.ct=classify(nm,txn,isIn);out.push(row);}return out;}
-  function parseAsaas(rows,h){var H=rows[h];var cD=colIdx(H,['data']),cN=colIdx(H,['descri']),cV=colIdx(H,['valor']),cT=colIdx(H,['transação','transacao']);var out=[];for(var i=h+1;i<rows.length;i++){var r=rows[i];if(!r)continue;var dt=pdate(r[cD],'dmy');if(!dt)continue;var val=pnum(r[cV]);if(val==null)continue;var nm=String((cN>=0?r[cN]:'')||'').trim();if(!nm&&cT>=0)nm=String(r[cT]||'').trim();var pm=/pix/i.test(nm)?'Pix':(/boleto/i.test(nm)?'Boleto':'');var row=mkrow({ac:'Asaas',pm:pm,da:dt,pe:dt,du:dt,pd:dt,av:dt});var isIn=setBRL(row,val,dt);row.nm=nm;row.ct=classify(nm,'',isIn);out.push(row);}return out;}
+  function parseAsaas(rows,h){var H=rows[h];var cD=colIdx(H,['data']),cN=colIdx(H,['descri']),cV=colIdx(H,['valor']),cT=colIdx(H,['transação','transacao']);var out=[];for(var i=h+1;i<rows.length;i++){var r=rows[i];if(!r)continue;var dt=pdate(r[cD],'dmy');if(!dt)continue;var val=pnum(r[cV]);if(val==null)continue;
+    var desc=String((cN>=0?r[cN]:'')||'').trim();
+    var nm=desc,pm='';var mch=desc.match(/com chave para (.+)$/i);
+    if(/taxa de/i.test(desc)){nm='Asaas';pm='Autopay';}
+    else if(mch){nm=titlecase(mch[1]);pm='Pix';}
+    else if(/cobran[çc]a recebida/i.test(desc)){var mp=desc.replace(/cobran[çc]a recebida\s*-?\s*fatura(\s+da cobrança)?\s*nr\.?\s*\d+\s*/i,'').trim();nm=titlecase(mp)||desc;pm='Fatura';}
+    else if(/pix/i.test(desc)){pm='Pix';}
+    var row=mkrow({ac:'Asaas',pm:pm,da:dt,pe:dt,du:dt,pd:dt,av:dt,nt:desc});var isIn=setBRL(row,val,dt);row.nm=nm;row.ct=classify(nm,desc,isIn);out.push(row);}return out;}
   function parseUnicredCC(rows,h){var H=rows[h];var cD=colIdx(H,['data']),cN=colIdx(H,['lançamento','lancamento']),cV=colIdx(H,['valor']);if(cD<0||cV<0)return [];var out=[];for(var i=h+1;i<rows.length;i++){var r=rows[i];if(!r)continue;var dc=r[cD];if(dc==null||String(dc).trim()==='')continue;var dt=pdate(dc,'dmy');if(!dt)continue;var vc=r[cV];var val=(typeof vc==='number')?vc:pnum(vc);if(val==null)continue;var nm=String((cN>=0?r[cN]:'')||'').trim();var row=mkrow({ac:'Unicred - CC',pm:pmUniCC(nm),da:dt,pe:dt,du:dt,pd:dt,av:dt});var isIn=setBRL(row,val,dt);row.nm=nm;row.ct=classify(nm,'',isIn);out.push(row);}return out;}
   function parseCard(rows,h,accName,vday,fname,dsub,nsub,vsub){var H=rows[h];var cD=colIdx(H,dsub),cN=colIdx(H,nsub),cV=colIdx(H,vsub);if(cD<0||cV<0)return [];var due=invoiceDue(fname,vday);var out=[];for(var i=h+1;i<rows.length;i++){var r=rows[i];if(!r)continue;var dt=pdate(r[cD],'dmy');if(!dt)continue;var valR=pnum(r[cV]);if(valR==null||Math.abs(valR)<0.005)continue;var nm=String((cN>=0?r[cN]:'')||'').trim();var row=mkrow({ac:accName,pm:'Credit Card',da:dt,pe:dt,du:due,pd:null,av:null});var isIn=setBRL(row,-valR,dt);row.nm=nm;row.ct=classify(nm,'',isIn);out.push(row);}return out;}
   function parseStripe(rows,h){var H=rows[h].map(function(x){return String(x==null?'':x).toLowerCase();});function ci(n){return H.indexOf(n);}
@@ -68,6 +78,7 @@ function buildImporter(PTAX, PLANO, HISTCAT){
     else if(det.bank==='unicredcard')list=parseCard(rows,det.h,'Unicred - Cartão',19,fname,['data'],['descri'],['valor']);
     else if(det.bank==='c6cc')return {bank:'c6cc',account:'C6 - CC',rows:[],message:'C6 Conta Corrente: sem movimentações.'};
     else return {bank:'generic',account:det.acc,rows:[],message:'Formato não reconhecido automaticamente.'};
+    for(var j=0;j<list.length;j++)refine(list[j]);
     return {bank:det.bank,account:det.acc,rows:list};
   }
   return {runImport:runImport, detectFormat:detectFormat};

@@ -100,10 +100,10 @@ table.mj input.ce,table.mj select.ce{font:12px var(--ss);color:var(--ink);backgr
     <div style="margin-top:8px;display:flex;gap:8px;justify-content:flex-end;align-items:center;flex-wrap:wrap">
       <span class="dirty" id="dirty"></span>
       <button class="btn" id="themebtn" title="Alternar tema claro/escuro" aria-label="Tema" style="cursor:pointer">🌙</button>
-      <label class="btn" for="impfile" style="cursor:pointer">Importar CSV</label>
+      <label class="btn" for="impfile" style="cursor:pointer">Importar extratos</label>
       <button class="btn" id="exp">Exportar CSV</button>
       <button class="btn" id="disc" style="display:none">Descartar edições</button>
-      <input type="file" id="impfile" accept=".csv,.txt,text/csv" style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden">
+      <input type="file" id="impfile" accept=".csv,.txt,.xls,.xlsx,text/csv" multiple style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden">
     </div>
   </div>
 </div>
@@ -454,10 +454,13 @@ function parseStripe(rows,h){var H=rows[h].map(function(x){return String(x==null
  }return out;}
 /* ---- roteamento + commit ---- */
 function dedupKey(r){return r.ac+'|'+r.da+'|'+(Math.round((r.b||0)*100)/100)+'|'+(r.nm||'').slice(0,24).toLowerCase();}
-function commitRows(list){if(!list||!list.length){toast('Nada para importar neste arquivo.');return;}var seen={};P.mj.forEach(function(r){if(r._imp)seen[dedupKey(r)]=1;});var added=0,dup=0,addedRows=[];list.forEach(function(r){var k=dedupKey(r);if(seen[k]){dup++;return;}seen[k]=1;r.rc='';r.id=nextId++;r._imp=true;r.f=[];if(!r.nm)r.nm='(sem nome)';P.mj.push(r);addedRows.push(r);added++;});
+function mjKey(r){return (r.ac||'')+'|'+(r.pd||r.da||'')+'|'+(Math.round((r.o||0)*100)/100)+'|'+(Math.round((r.i||0)*100)/100);}
+function commitRows(list){if(!list||!list.length){toast('Nada para importar.');return;}
+  var seen={};P.mj.forEach(function(r){seen[mjKey(r)]=1;});
+  var added=0,dup=0,addedRows=[];list.forEach(function(r){var k=mjKey(r);if(seen[k]){dup++;return;}seen[k]=1;r.rc='No';r.id=nextId++;r._imp=true;r.f=[];if(!r.nm)r.nm='(sem nome)';P.mj.push(r);addedRows.push(r);added++;});
   var jumped='';
   if(added){var ds=addedRows.map(function(r){return r.pd||r.da||r.pe;}).filter(Boolean).sort();if(ds.length){var mn=ds[0],mx=ds[ds.length-1];if(mn.slice(0,7)===mx.slice(0,7)){curMode='month';cur=mn.slice(0,7);jumped=' Período ajustado para '+cur+'.';}else{curMode='range';curStart=mn;curEnd=mx;jumped=' Período ajustado para '+mn+' → '+mx+'.';}try{buildMsel();}catch(e){}var rb=document.getElementById('rangebox');if(rb)rb.style.display=curMode==='range'?'inline':'none';if(curMode==='range'){var rs=document.getElementById('rstart'),re=document.getElementById('rend');if(rs)rs.value=curStart;if(re)re.value=curEnd;}}}
-  recomputeFlags();persistImports();markDirty();buildHist();closeImport();if(window.__mjInit){renderActive();}toast(added?(added+' linha(s) importada(s) (Reconciled vazio — exclusivo do Patrick).'+jumped+(dup?(' '+dup+' já constavam, ignoradas.'):'')):'0 novas linhas (todas já haviam sido importadas).');}
+  recomputeFlags();persistImports();markDirty();buildHist();closeImport();if(window.__mjInit){renderActive();}toast(added?(added+' linha(s) importada(s), Reconciled = No.'+jumped+(dup?(' '+dup+' já constavam na planilha — ignoradas (sem duplicar).'):'')):(dup+' linha(s) já constavam na planilha — nada duplicado.'));}
 function renderPreview(list){var t=document.getElementById('impprev');var head='<tr style="position:sticky;top:0;background:var(--sunk)"><th style="text-align:left;padding:4px 6px">Data</th><th style="text-align:left;padding:4px 6px">Nome</th><th style="text-align:right;padding:4px 6px">Saída</th><th style="text-align:right;padding:4px 6px">Entrada</th><th style="text-align:right;padding:4px 6px">R$</th><th style="text-align:left;padding:4px 6px">Categoria</th></tr>';var body=list.slice(0,6).map(function(r){return '<tr><td style="padding:3px 6px">'+brdt(r.da)+'</td><td style="padding:3px 6px">'+esc((r.nm||'').slice(0,26))+'</td><td style="padding:3px 6px;text-align:right;color:var(--dn)">'+(r.o?f0(r.o):'')+'</td><td style="padding:3px 6px;text-align:right;color:var(--up)">'+(r.i?f0(r.i):'')+'</td><td style="padding:3px 6px;text-align:right;color:var(--fnt)">'+(r.b?r.b.toLocaleString('pt-BR',{minimumFractionDigits:2}):'')+'</td><td style="padding:3px 6px;color:var(--fnt)">'+esc((r.ct||'').slice(0,22))+'</td></tr>';}).join('');t.innerHTML=head+body+(list.length>6?'<tr><td colspan="6" style="padding:4px 6px;color:var(--mut)">+ '+(list.length-6)+' linha(s)…</td></tr>':'');}
 function routeImport(rows,fname){rows=(rows||[]).filter(function(r){return r&&r.length&&r.some(function(x){return String(x==null?'':x).trim()!=='';});});if(rows.length<2){toast('Arquivo sem linhas de dados.');return;}
  var det=detectFormat(rows,fname);document.getElementById('impacc').innerHTML=P.contas.map(function(a){return '<option>'+esc(a)+'</option>';}).join('');document.getElementById('impacc').value=det.acc||guessAccount(fname)||P.contas[0];document.getElementById('impcur').value=defCur(document.getElementById('impacc').value);
@@ -482,7 +485,27 @@ function showImpProgress(){var o=document.getElementById('impprog'),bar=document
  var steps=['Enviando extrato ao motor de conciliação…','Detectando o banco e estruturando as linhas…','Calculando datas e vencimentos (regra de cada banco)…','Convertendo BRL ↔ USD pela PTAX da data…','Classificando pelo plano de contas e histórico…','Conferindo transferências, taxas e IOF…'];
  var i=0,pct=0,start=Date.now();msg.textContent=steps[0];bar.style.width='6%';
  var t=setInterval(function(){i++;if(i<steps.length)msg.textContent=steps[i];pct=Math.min(92,pct+9);bar.style.width=pct+'%';},650);
- return {done:function(ok){var el=Date.now()-start,wait=Math.max(0,3200-el);setTimeout(function(){clearInterval(t);bar.style.width='100%';msg.textContent=(ok===false)?'Não foi possível processar.':'Pronto — confira a prévia.';setTimeout(function(){o.style.display='none';},420);},wait);}};}
+ return {setMsg:function(m){msg.textContent=m;},done:function(ok,finalMsg){var el=Date.now()-start,wait=Math.max(0,3200-el);setTimeout(function(){clearInterval(t);bar.style.width='100%';msg.textContent=finalMsg||((ok===false)?'Não foi possível processar.':'Pronto!');setTimeout(function(){o.style.display='none';},450);},wait);}};}
+async function readFileRows(f){var nm=f.name||'';
+ if(/\.(xls|xlsx|xlsm)$/i.test(nm)){if(typeof XLSX==='undefined')throw new Error('Leitor de Excel indisponível');var buf=await f.arrayBuffer();var wb=XLSX.read(new Uint8Array(buf),{type:'array'});var ws=wb.Sheets[wb.SheetNames[0]];return XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:''});}
+ var txt=await f.text();var dl=detectDelim((txt.replace(/^﻿/,'').split(/\r?\n/)[0]||''));return parseCSV(txt,dl);}
+async function importFiles(files){files=[].slice.call(files);if(!files.length)return;
+ var prog=showImpProgress();var all=[],lines=[];
+ for(var i=0;i<files.length;i++){var f=files[i];
+  prog.setMsg('('+(i+1)+'/'+files.length+') '+f.name+' — enviando ao n8n…');
+  try{
+   if(/\.pdf$/i.test(f.name)){lines.push(f.name+': PDF não lido');continue;}
+   var rows=await readFileRows(f);
+   var resp=await fetch(WEBHOOK,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({rows:rows,filename:f.name})});
+   if(!resp.ok){lines.push(f.name+': n8n HTTP '+resp.status);continue;}
+   var data=await resp.json();var list=(data&&data.rows)||[];
+   if(list.length){all=all.concat(list);lines.push(f.name+': '+list.length+' ('+(data.account||data.bank)+')');}
+   else lines.push(f.name+': '+((data&&data.message)||'0 linhas'));
+  }catch(e){lines.push(f.name+': erro '+e.message);}
+ }
+ prog.done(true, files.length+' arquivo(s) processado(s).');
+ setTimeout(function(){commitRows(all);},700);
+}
 async function routeViaWebhook(rows,fname){rows=(rows||[]).filter(function(r){return r&&r.length&&r.some(function(x){return String(x==null?'':x).trim()!=='';});});if(rows.length<2){toast('Arquivo sem linhas de dados.');return;}
  var prog=showImpProgress();
  try{
@@ -544,11 +567,12 @@ function initMJ(){document.getElementById('mjq').addEventListener('input',()=>re
   document.getElementById('bulkclear').addEventListener('click',()=>{mjSel.clear();renderMJ();updateBulk();});
   document.getElementById('bulkapply').addEventListener('click',()=>{const k=bf.value,v=document.getElementById('bulkval').value;if(!mjSel.size)return;mjSel.forEach(id=>{const r=P.mj.find(x=>x.id===id);if(!r)return;let val=v;if(BFIELDS.find(x=>x[0]===k)[2]==='date')val=val||null;r[k]=val;if(r._imp){}else{EDITS[id]=EDITS[id]||{};EDITS[id][k]=val;}});try{localStorage.setItem('ruche_mj_edits',JSON.stringify(EDITS));}catch(e){}persistImports();recomputeFlags();markDirty();renderLive();renderMJ();updateBulk();});
   renderLive();renderMJ();}
-document.getElementById('impfile').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const nm=f.name||'';
-  if(/\.pdf$/i.test(nm)){toast('PDF não é lido aqui. Exporte o extrato em CSV/Excel (ou me mande que eu converto).');e.target.value='';return;}
-  if(/\.(png|jpe?g|gif)$/i.test(nm)){toast('Imagem não é lida aqui. Exporte o extrato em CSV/Excel.');e.target.value='';return;}
-  if(/\.(xls|xlsx|xlsm)$/i.test(nm)){if(typeof XLSX==='undefined'){toast('Leitor de Excel indisponível. Exporte como CSV.');e.target.value='';return;}const rb=new FileReader();rb.onload=()=>{try{const wb=XLSX.read(new Uint8Array(rb.result),{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];const rows=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:''});(WEBHOOK?routeViaWebhook:routeImport)(rows,nm);}catch(err){toast('Erro ao ler Excel: '+err.message);}};rb.onerror=()=>toast('Não consegui ler o arquivo.');rb.readAsArrayBuffer(f);e.target.value='';return;}
-  const rd=new FileReader();rd.onload=()=>{try{const txt=rd.result;const dl=detectDelim((txt.replace(/^﻿/,'').split(/\r?\n/)[0]||''));const rows=parseCSV(txt,dl);(WEBHOOK?routeViaWebhook:routeImport)(rows,nm);}catch(err){toast('Erro ao ler: '+err.message);}};rd.onerror=()=>toast('Não consegui ler o arquivo.');rd.readAsText(f);e.target.value='';});
+document.getElementById('impfile').addEventListener('change',async e=>{const files=[].slice.call(e.target.files||[]);if(!files.length)return;
+  if(WEBHOOK){ await importFiles(files); e.target.value=''; return; }
+  // fallback local (sem webhook): processa 1 a 1 pelo mapeamento manual
+  var f=files[0],nm=f.name||'';
+  if(/\.(xls|xlsx|xlsm)$/i.test(nm)){if(typeof XLSX==='undefined'){toast('Leitor de Excel indisponível.');e.target.value='';return;}const rb=new FileReader();rb.onload=()=>{try{const wb=XLSX.read(new Uint8Array(rb.result),{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];routeImport(XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:''}),nm);}catch(err){toast('Erro: '+err.message);}};rb.readAsArrayBuffer(f);e.target.value='';return;}
+  const rd=new FileReader();rd.onload=()=>{try{const txt=rd.result;const dl=detectDelim((txt.replace(/^﻿/,'').split(/\r?\n/)[0]||''));routeImport(parseCSV(txt,dl),nm);}catch(err){toast('Erro: '+err.message);}};rd.readAsText(f);e.target.value='';});
 document.getElementById('impdo').addEventListener('click',doImport);
 document.getElementById('impcancel').addEventListener('click',closeImport);
 document.getElementById('exp').addEventListener('click',async()=>{const cols=['Date Added','Name','Payment Method','Outflow (USD)','Inflow (USD)','Currency (BRL)','Chart of Accounts','Account','Empresa','Due Date','Payment Date','Available','Period','Notes','Reconciled'];const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';const lines=[cols.join(',')];P.mj.forEach(r=>lines.push([r.da,r.nm,r.pm,r.o,r.i,r.b,r.ct,r.ac,r.emp,r.du,r.pd,r.av,r.pe,r.nt,r.rc].map(q).join(',')));const csv='﻿'+lines.join('\n');const dl=await (window.claude&&claude.use?claude.use('downloads'):Promise.resolve(null));if(dl){try{await dl.save({filename:'Master_Journal_Ruche.csv',data:csv});}catch(e){if(e&&e.code==='extension_not_enabled'){try{await dl.save({filename:'Master_Journal_Ruche.txt',data:csv});}catch(e2){if(e2&&e2.code!=='declined')toast('Não foi possível salvar: '+(e2.message||e2.code||e2));}}else if(e&&e.code!=='declined')toast('Não foi possível salvar: '+(e.message||e.code||e));}}else{try{const b=new Blob([csv],{type:'text/csv'});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download='Master_Journal_Ruche.csv';a.click();URL.revokeObjectURL(u);}catch(e){}}});

@@ -6,12 +6,14 @@ core=re.sub(r"if\(typeof module.*$","",core,flags=re.S).strip()
 ptax=open(f'{SP}/ptax.json',encoding='utf-8').read()
 plano=open(f'{SP}/plano.json',encoding='utf-8').read()
 histcat=open(f'{SP}/histcat.json',encoding='utf-8').read()
+histnotes=open(f'{SP}/histnotes.json',encoding='utf-8').read()
 
 jsCode = (
 "// ===== Importador Universal Ruche — todas as regras dos handoffs =====\n"
 "const PTAX = " + ptax + ";\n"
 "const PLANO = " + plano + ";\n"
 "const HISTCAT = " + histcat + ";\n"
+"const HISTNOTES = " + histnotes + ";\n"
 + core + "\n"
 "// ---- driver: lê body do webhook, aplica regras, devolve linhas ----\n"
 "const _in = $input.first().json;\n"
@@ -19,7 +21,7 @@ jsCode = (
 "if (typeof body === 'string') { try { body = JSON.parse(body); } catch(e) { body = {}; } }\n"
 "const rows = (body && body.rows) || [];\n"
 "const filename = (body && (body.filename || body.fname)) || '';\n"
-"const imp = buildImporter(PTAX, PLANO, HISTCAT);\n"
+"const imp = buildImporter(PTAX, PLANO, HISTCAT, HISTNOTES);\n"
 "const res = imp.runImport(rows, filename);\n"
 "return [{ json: res }];\n"
 )
