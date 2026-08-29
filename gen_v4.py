@@ -200,6 +200,8 @@ table.mj input.ce,table.mj select.ce{font:12px var(--ss);color:var(--ink);backgr
 </div>
 <div id="toast" style="position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:90;background:var(--ink);color:var(--bg);padding:11px 18px;border-radius:10px;font:600 13px var(--ss);box-shadow:var(--sh);opacity:0;transition:opacity .2s;max-width:90vw;text-align:center;white-space:pre-line;pointer-events:none"></div>
 <div class="tip" id="tip" role="tooltip"></div>
+<div id="impprog" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:95;align-items:center;justify-content:center;padding:16px"><div style="background:var(--card);border:1px solid var(--ln2);border-radius:14px;padding:22px 26px;width:380px;max-width:100%;box-shadow:var(--sh);color:var(--ink);font-family:var(--ss)"><div style="font:700 15px var(--ss);display:flex;align-items:center;gap:8px"><span class="spin" style="display:inline-block;width:14px;height:14px;border:2px solid var(--ln2);border-top-color:var(--acc);border-radius:50%;animation:spin 0.8s linear infinite"></span> Analisando extrato…</div><div id="impprogmsg" style="font-size:12.5px;color:var(--mut);margin:9px 0 12px;min-height:16px"></div><div style="height:8px;background:var(--sunk);border-radius:6px;overflow:hidden"><div id="impprogbar" style="height:100%;width:0%;background:var(--acc);transition:width .5s ease"></div></div></div></div>
+<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
 __XLSXLOADER__
 <script>
 const P=__PAYLOAD__;
@@ -454,13 +456,18 @@ function routeImport(rows,fname){rows=(rows||[]).filter(function(r){return r&&r.
  document.getElementById('impmapwrap').style.display='none';
  var cb=document.getElementById('impcard');if(IMPIsCard){cb.style.display='flex';document.getElementById('impvenc').value=venc||'';document.getElementById('impfatura').value='';}else cb.style.display='none';
  renderPreview(list);document.getElementById('impprevwrap').style.display='block';document.getElementById('impmodal').style.display='flex';}
+function showImpProgress(){var o=document.getElementById('impprog'),bar=document.getElementById('impprogbar'),msg=document.getElementById('impprogmsg');o.style.display='flex';bar.style.width='0%';
+ var steps=['Enviando extrato ao motor de conciliação…','Detectando o banco e estruturando as linhas…','Calculando datas e vencimentos (regra de cada banco)…','Convertendo BRL ↔ USD pela PTAX da data…','Classificando pelo plano de contas e histórico…','Conferindo transferências, taxas e IOF…'];
+ var i=0,pct=0,start=Date.now();msg.textContent=steps[0];bar.style.width='6%';
+ var t=setInterval(function(){i++;if(i<steps.length)msg.textContent=steps[i];pct=Math.min(92,pct+9);bar.style.width=pct+'%';},650);
+ return {done:function(ok){var el=Date.now()-start,wait=Math.max(0,3200-el);setTimeout(function(){clearInterval(t);bar.style.width='100%';msg.textContent=(ok===false)?'Não foi possível processar.':'Pronto — confira a prévia.';setTimeout(function(){o.style.display='none';},420);},wait);}};}
 async function routeViaWebhook(rows,fname){rows=(rows||[]).filter(function(r){return r&&r.length&&r.some(function(x){return String(x==null?'':x).trim()!=='';});});if(rows.length<2){toast('Arquivo sem linhas de dados.');return;}
- toast('Processando no n8n…');
+ var prog=showImpProgress();
  try{
   var resp=await fetch(WEBHOOK,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({rows:rows,filename:fname})});
-  if(!resp.ok){toast('n8n retornou '+resp.status+' — o workflow está ativo?');return;}
+  if(!resp.ok){prog.done(false);toast('n8n retornou '+resp.status+' — o workflow está ativo?');return;}
   var data=await resp.json();var list=(data&&data.rows)||[];
-  if(!list.length){toast((data&&data.message)||'Nenhuma linha reconhecida pelo n8n.');return;}
+  if(!list.length){prog.done(false);toast((data&&data.message)||'Nenhuma linha reconhecida pelo n8n.');return;}
   IMPMode='auto';IMPPre=list;IMPIsCard=/cart[ãa]o/i.test(data.account||'');
   document.getElementById('impacc').innerHTML=P.contas.map(function(a){return '<option>'+esc(a)+'</option>';}).join('');
   document.getElementById('impacc').value=data.account||list[0].ac||P.contas[0];
@@ -470,7 +477,8 @@ async function routeViaWebhook(rows,fname){rows=(rows||[]).filter(function(r){re
   document.getElementById('impmapwrap').style.display='none';
   var cb=document.getElementById('impcard');if(IMPIsCard){cb.style.display='flex';document.getElementById('impvenc').value=list[0].du||'';document.getElementById('impfatura').value='';}else cb.style.display='none';
   renderPreview(list);document.getElementById('impprevwrap').style.display='block';document.getElementById('impmodal').style.display='flex';
- }catch(e){toast('Erro ao falar com o n8n: '+e.message+' (CORS/ativo?)');}}
+  prog.done(true);
+ }catch(e){prog.done(false);toast('Erro ao falar com o n8n: '+e.message+' (CORS/ativo?)');}}
 function openManual(rows,fname){var hdr=rows[0];IMPParsed={rows:rows.slice(1),hdr:hdr};var map=mapHeaders(hdr);var io=function(k){for(var i in map)if(map[i]===k)return +i;return -1;};
  document.getElementById('impinfo').textContent=(rows.length-1)+' linhas · '+hdr.length+' colunas · formato não reconhecido — confira o mapeamento.';
  document.getElementById('impdet').style.display='none';document.getElementById('impprevwrap').style.display='none';document.getElementById('impmapwrap').style.display='block';

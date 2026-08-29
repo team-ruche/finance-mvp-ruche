@@ -1,7 +1,9 @@
 // ===== Ruche importador universal — lógica portada do dashboard (regras dos handoffs) =====
 // Exporta runImport(rows2d, filename) -> { account, bank, rows:[MJ rows] }
 // PTAX e plano são injetados como globais PTAX e PLANO (no n8n ficam inline; aqui via require).
-function buildImporter(PTAX, PLANO){
+function buildImporter(PTAX, PLANO, HISTCAT){
+  HISTCAT = HISTCAT || {};
+  function normName(nm){var s=(nm||'').toLowerCase();s=s.replace(/zelle payment (from|to)/g,' ').replace(/conf#\s*\w+/g,' ').replace(/\bmobile purchase\b|\bpurchase\b|\bwithdrwl\b|\bwithdrawal\b/g,' ').replace(/\bfor\b\s+"[^"]*"/g,' ').replace(/\d{2}\/\d{2}(\/\d{2,4})?/g,' ').replace(/[*#]/g,' ').replace(/\s+/g,' ').trim();return s;}
   function r2(n){return Math.round((n+Number.EPSILON)*100)/100;}
   function pad2(n){return String(n).padStart(2,'0');}
   var _MON={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12,fev:2,abr:4,mai:5,ago:8,set:9,out:10,dez:12};
@@ -19,7 +21,11 @@ function buildImporter(PTAX, PLANO){
   function pmUniCC(nm){nm=(nm||'').toLowerCase();if(/pix/.test(nm))return 'Pix';if(/ted|tef|transferencia/.test(nm))return 'Transferência';if(/boleto|titulo|liquidacao/.test(nm))return 'Boleto';if(/pagamento|debito/.test(nm))return 'Débito';if(/credito|recebimento/.test(nm))return 'Crédito';return '';}
   function guessAccount(fn){fn=(fn||'').toLowerCase();if(/unicred|sicredi/.test(fn)){if(/cart|fatura/.test(fn))return 'Unicred - Cartão';if(/invest|rdc|rentab/.test(fn))return 'Unicred - Invest';return 'Unicred - CC';}if(/c6/.test(fn)){if(/cart|fatura/.test(fn))return 'C6 - Cartão';return 'C6 - CC';}if(/boa|bank ?of ?america|bofa/.test(fn))return 'BoA';if(/payoneer|payoner/.test(fn))return 'Payoneer';if(/wise/.test(fn))return 'Wise - Cris';if(/stripe/.test(fn))return 'Stripe';if(/asaas/.test(fn))return 'Asaas';return null;}
   var KWRULES=[[/arranjo debito|arranjo débito|cred dom|stripe brasil/i,'12.3.1 - Inter-Account Transfers'],[/pagamento fatura|pag fatura|pgto fatura|pagamento recebido|pagamento de fatura/i,'12.3.1 - Inter-Account Transfers'],[/facebook|facebk|meta ?ads/i,'5.1.1 - Paid Traffic — Ruche Acquisition'],[/highlevel|gohighlevel|ghl/i,'3.1.2 - CRM - usage-based'],[/twilio|sonetel/i,'3.1.1 - Twilio / Telephony'],[/openai|anthropic|claude|chatgpt|manus/i,'4.2.4 - AI Tools'],[/google workspace|hostinger|lovable|hetzner|dicloak/i,'4.2.5 - Infrastructure / Technology'],[/\biof\b/i,'5.2.18 - Card IOF'],[/aluguel|\brent\b/i,'5.2.1 - Rent'],[/contabil|accounting|ferreira/i,'5.2.8 - Accounting'],[/simples nacional/i,'2.4.1 - Simples Nacional / DAS'],[/stripe/i,'3.2.1 - Stripe Fees','out']];
-  function classify(nm,nt,inflow){var hay=(nm+' '+(nt||''));var cat=null;for(var k=0;k<KWRULES.length;k++){var kr=KWRULES[k];if(kr[2]==='out'&&inflow)continue;if(kr[0].test(hay)){cat=kr[1];break;}}if(!cat||(PLANO&&PLANO.indexOf(cat)<0))cat=inflow?'1.4.1 - Revenue to Classify':'5.4.1 - Expenses to Classify';return cat;}
+  function classify(nm,nt,inflow){var cat=null;
+    var raw=(nm||'').trim().toLowerCase(),n=normName(nm);
+    if(HISTCAT[raw])cat=HISTCAT[raw];else if(n&&HISTCAT[n])cat=HISTCAT[n];
+    if(!cat){var hay=(nm+' '+(nt||''));for(var k=0;k<KWRULES.length;k++){var kr=KWRULES[k];if(kr[2]==='out'&&inflow)continue;if(kr[0].test(hay)){cat=kr[1];break;}}}
+    if(!cat||(PLANO&&PLANO.indexOf(cat)<0))cat=inflow?'1.4.1 - Revenue to Classify':'5.4.1 - Expenses to Classify';return cat;}
   function detectFormat(rows,fname){var h;
     if((h=findHdr(rows,['balance_transaction_id']))>=0)return {bank:'stripe',h:h,acc:'Stripe'};
     if((h=findHdr(rows,['data de compra','valor (em r']))>=0)return {bank:'c6card',h:h,acc:'C6 - Cartão'};
