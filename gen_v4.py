@@ -68,7 +68,6 @@ table.mj td.n{text-align:right;font-variant-numeric:tabular-nums}
 table.mj tbody tr:nth-child(even){background:var(--sunk)}
 table.mj tbody tr.norec{background:var(--redrow)}table.mj tbody tr.norec:nth-child(even){background:var(--redrow2)}
 table.mj tbody tr.sel,table.mj tbody tr.sel:nth-child(even){background:var(--asf)}
-table.mj tr.edited td.mark{box-shadow:inset 3px 0 0 var(--acc)}
 .accdot{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px;vertical-align:middle}
 .pill{display:inline-block;padding:1px 7px;border-radius:10px;font-size:11px;font-weight:700;line-height:1.55;white-space:nowrap}
 /* congelar as 3 primeiras colunas (checkbox, Date Added, Name) — estilo Excel */
@@ -230,6 +229,7 @@ const codeOf=s=>{const m=String(s).match(/^\s*([\d.]+)/);return m?m[1].replace(/
 const famOf=s=>{const c=codeOf(s);return c?c.split('.')[0]:'';};
 const r2=x=>Math.round((x||0)*100)/100;
 const f0=n=>(n<0?'-':'')+'US$ '+Math.abs(Math.round(n)).toLocaleString('pt-BR');
+const f2=n=>(n<0?'-':'')+'US$ '+Math.abs(n).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 const pc=n=>(n<0?'-':'')+Math.abs(n).toFixed(1).replace('.',',')+'%';
 const cv=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const brdt=d=>d?d.slice(8,10)+'/'+d.slice(5,7)+'/'+d.slice(2,4):'';
@@ -342,7 +342,7 @@ function buildHead(){const arrow=k=>mjSort===k?(mjDir<0?' ▾':' ▴'):'';
   document.querySelectorAll('#mjt thead th[data-s]').forEach(th=>th.addEventListener('click',()=>{const k=th.dataset.s;if(mjSort===k)mjDir=-mjDir;else{mjSort=k;mjDir=-1;}renderMJ();}));
   document.querySelectorAll('#mjt thead [data-f]').forEach(inp=>inp.addEventListener('input',()=>{mjFilt[inp.dataset.f]=inp.value;renderMJ(true);}));
   const all=document.getElementById('mjall');all.addEventListener('change',()=>{const ids=mjFiltered().map(r=>r.id);if(all.checked)ids.forEach(i=>mjSel.add(i));else ids.forEach(i=>mjSel.delete(i));renderMJ();updateBulk();});}
-function cellDisplay(r,c){const k=c.k,v=r[k];if(k==='o')return v?'<span style="color:var(--dn)">'+f0(v)+'</span>':'';if(k==='i')return v?'<span style="color:var(--up)">'+f0(v)+'</span>':'';if(k==='b')return v?'<span style="color:var(--fnt)">'+v.toLocaleString('pt-BR',{minimumFractionDigits:2})+'</span>':'';if(c.type==='date')return brdt(v);if(k==='nm')return '<b>'+esc(v)+'</b>'+(r._imp?'<span class="fg i">IMPORT</span>':'')+r.f.map(f=>'<span class="fg '+(f==='dup'?'d':'')+'">'+({dup:'DUP',per:'COMP',acc:'S/CONTA',pdt:'S/DATA'}[f])+'</span>').join('');if(k==='nt')return esc((v||'').slice(0,60));if(k==='ac')return pill(v,ACCCOL);if(k==='emp')return pill(v,EMPCOL);if(k==='ct')return pillCt(v);return esc(v);}
+function cellDisplay(r,c){const k=c.k,v=r[k];if(k==='o')return v?'<span style="color:var(--dn)">'+f2(v)+'</span>':'';if(k==='i')return v?'<span style="color:var(--up)">'+f2(v)+'</span>':'';if(k==='b')return v?'<span style="color:var(--fnt)">'+v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+'</span>':'';if(k==='rc'){var rv=String(v||''),lc=rv.toLowerCase();var bg=/patrick/.test(lc)?'#7a6a52':(/cris/.test(lc)?'#c0110f':(lc==='yes'?'#2e7d46':(/aberto/.test(lc)?'#b8892b':null)));return bg?'<span class="pill" style="background:'+bg+';color:#fff">'+esc(rv)+'</span>':esc(rv);}if(c.type==='date')return brdt(v);if(k==='nm')return '<b>'+esc(v)+'</b>'+(r._imp?'<span class="fg i">IMPORT</span>':'')+r.f.map(f=>'<span class="fg '+(f==='dup'?'d':'')+'">'+({dup:'DUP',per:'COMP',acc:'S/CONTA',pdt:'S/DATA'}[f])+'</span>').join('');if(k==='nt')return esc((v||'').slice(0,60));if(k==='ac')return pill(v,ACCCOL);if(k==='emp')return pill(v,EMPCOL);if(k==='ct')return pillCt(v);return esc(v);}
 function renderMJ(){if(!document.querySelector('#mjt thead').children.length)buildHead();else document.querySelectorAll('#mjt thead th[data-s] .ar').forEach(a=>{const k=a.parentNode.dataset.s;a.textContent=mjSort===k?(mjDir<0?' ▾':' ▴'):'';});
   const all=mjFiltered();
   document.querySelector('#mjt tbody').innerHTML=all.map(r=>{const tds=COLS.map(c=>{const disp=cellDisplay(r,c);if(c.type==='ro')return '<td class="'+(c.cls||'')+'">'+disp+'</td>';const ntc=c.k==='nt'?' ntc':'';return '<td class="e mark'+ntc+'" data-id="'+r.id+'" data-k="'+c.k+'" title="clique para editar">'+disp+'</td>';}).join('');
