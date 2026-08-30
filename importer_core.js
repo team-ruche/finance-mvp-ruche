@@ -66,19 +66,25 @@ function buildImporter(PTAX, PLANO, HISTCAT, HISTNOTES){
       }else{var amt=(net!=null)?net:(gross!=null?gross:null);if(amt==null||Math.abs(amt)<0.004)continue;var row1=mkrow({ac:'Stripe',pm:'Stripe',da:created,pd:avail,av:avail,nm:desc||cust||'Stripe',nt:note});var isIn2=setBRL(row1,amt,created);row1.pe=isIn2?created:avail;row1.ct=(cat==='fee'||cat==='other_adjustment')?'3.2.1 - Stripe Fees':classify(row1.nm,note,isIn2);out.push(row1);}
     }return out;}
   function parseC6ccPDF(text){var L=text.split(/\r?\n/).map(function(s){return s.trim();}).filter(function(x){return x!=='';});var ym=text.match(/\d{2}\/\d{2}\/(20\d{2})/);var year=ym?ym[1]:'2026';var out=[];
-    var tipos=/^(Entrada PIX|Sa[íi]da PIX|Entrada TED|Sa[íi]da TED|Pagamento|Entradas|Sa[íi]das|Transfer[eê]ncia|Estorno|Tarifa|D[ée]bito|Cr[ée]dito|Compra|Rendimento|Resgate|Aplica[çc][ãa]o)/i;
-    // formato pdf.js: "DD/MM DD/MM Tipo Descrição R$ Valor" numa linha só
-    var reOne=/^(\d{2})\/(\d{2})\s+\d{2}\/\d{2}\s+(.+?)\s+(-?\s*R\$\s*[\d.,]+)\s*$/;
+    var tipos=/^(Entrada PIX|Sa[íi]da PIX|Entrada TED|Sa[íi]da TED|Pagamento|Entradas|Sa[íi]das|Transfer[eê]ncia|Estorno|Tarifa|D[ée]bito de Cart[ãa]o|D[ée]bito|Cr[ée]dito|Compra|Rendimento|Resgate|Aplica[çc][ãa]o|Outros gastos|Outros)/i;
+    // sinal pelo Tipo (fonte confiável mesmo via OCR, onde o "-" some/vira aspas)
+    var tOUT=/^(sa[íi]da|pagamento|d[ée]bito|compra|tarifa|aplica|outros)/i;
+    var tIN=/^(entrada|cr[ée]dito|estorno|rendimento|resgate)/i;
+    // formato pdf.js/OCR: "DD/MM DD/MM Tipo Descrição [lixo] [-] R$ Valor" numa linha só
+    // tolera aspas/traços de OCR antes do R$ e o "-" ausente (grupo opcional)
+    var reOne=/^(\d{2})\/(\d{2})\s+\d{2}\/\d{2}\s+(.+?)[\s"'“”‘’]*(-|–|—)?\s*R\$\s*([\d][\d.,]*)\s*$/;
     // formato pymupdf: DD/MM em linha isolada seguida de campos
     var isDM=function(s){return /^\d{2}\/\d{2}$/.test(s);};
     for(var i=0;i<L.length;i++){
       if(/^saldo do dia/i.test(L[i]))continue;
-      var m=L[i].match(reOne),da,mid,val;
-      if(m){da=year+'-'+m[2]+'-'+m[1];mid=m[3].trim();val=pnum(m[4]);}
-      else if(isDM(L[i])&&isDM(L[i+1])){var dd=L[i].split('/');da=year+'-'+dd[1]+'-'+dd[0];mid=((L[i+2]||'')+' '+(L[i+3]||'')).trim();val=pnum(L[i+4]||'');i+=4;}
+      var m=L[i].match(reOne),da,mid,mag,negGlyph=false;
+      if(m){da=year+'-'+m[2]+'-'+m[1];mid=m[3].trim();negGlyph=!!m[4];mag=pnum(m[5]);}
+      else if(isDM(L[i])&&isDM(L[i+1])){var dd=L[i].split('/');da=year+'-'+dd[1]+'-'+dd[0];mid=((L[i+2]||'')+' '+(L[i+3]||'')).trim();var raw=pnum(L[i+4]||'');mag=raw==null?null:Math.abs(raw);negGlyph=raw!=null&&raw<0;i+=4;}
       else continue;
-      if(val==null)continue;
+      if(mag==null)continue;
       var tm=mid.match(tipos);var tipo=tm?tm[0]:'';var desc=tm?mid.slice(tipo.length).trim():mid;
+      // sinal: Tipo manda; se Tipo não decide, usa o glifo "-" (quando o OCR o preservou)
+      var neg=tOUT.test(tipo)?true:(tIN.test(tipo)?false:negGlyph);var val=neg?-mag:mag;
       var nm=desc;var m1=desc.match(/recebido de (.+)$/i)||desc.match(/enviado para (.+)$/i);if(m1)nm=titlecase(m1[1].replace(/^\d+\s*/,''));
       var pm=/pix/i.test(tipo)?'Pix':(/pagamento/i.test(tipo)?'Débito':(/ted|transfer/i.test(tipo)?'Transferência':''));
       var row=mkrow({ac:'C6 - CC',pm:pm,da:da,pe:da,du:da,pd:da,av:da,nt:desc});var isIn=setBRL(row,val,da);row.nm=nm||desc;row.ct=classify(nm,desc,isIn);out.push(row);
