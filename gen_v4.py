@@ -106,7 +106,7 @@ table.mj input.ce,table.mj select.ce{font:12px var(--ss);color:var(--ink);backgr
       <label class="btn" for="impfile" style="cursor:pointer">Importar extratos</label>
       <button class="btn" id="exp">Exportar CSV</button>
       <button class="btn" id="disc" style="display:none">Descartar edições</button>
-      <input type="file" id="impfile" accept=".csv,.txt,.xls,.xlsx,text/csv" multiple style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden">
+      <input type="file" id="impfile" accept=".csv,.txt,.xls,.xlsx,.pdf,.png,.jpg,.jpeg,image/*" multiple style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden">
     </div>
   </div>
 </div>
@@ -201,6 +201,7 @@ table.mj input.ce,table.mj select.ce{font:12px var(--ss);color:var(--ink);backgr
 <div id="impprog" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:95;align-items:center;justify-content:center;padding:16px"><div style="background:var(--card);border:1px solid var(--ln2);border-radius:14px;padding:22px 26px;width:380px;max-width:100%;box-shadow:var(--sh);color:var(--ink);font-family:var(--ss)"><div style="font:700 15px var(--ss);display:flex;align-items:center;gap:8px"><span class="spin" style="display:inline-block;width:14px;height:14px;border:2px solid var(--ln2);border-top-color:var(--acc);border-radius:50%;animation:spin 0.8s linear infinite"></span> Analisando extrato…</div><div id="impprogmsg" style="font-size:12.5px;color:var(--mut);margin:9px 0 12px;min-height:16px"></div><div style="height:8px;background:var(--sunk);border-radius:6px;overflow:hidden"><div id="impprogbar" style="height:100%;width:0%;background:var(--acc);transition:width .5s ease"></div></div></div></div>
 <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
 __XLSXLOADER__
+__EXTRALIBS__
 <script>
 const P=__PAYLOAD__;
 const WEBHOOK=__WEBHOOK__;
@@ -466,20 +467,24 @@ function showImpProgress(){var o=document.getElementById('impprog'),bar=document
  var i=0,pct=0,start=Date.now();msg.textContent=steps[0];bar.style.width='6%';
  var t=setInterval(function(){i++;if(i<steps.length)msg.textContent=steps[i];pct=Math.min(92,pct+9);bar.style.width=pct+'%';},650);
  return {setMsg:function(m){msg.textContent=m;},done:function(ok,finalMsg){var el=Date.now()-start,wait=Math.max(0,3200-el);setTimeout(function(){clearInterval(t);bar.style.width='100%';msg.textContent=finalMsg||((ok===false)?'Não foi possível processar.':'Pronto!');setTimeout(function(){o.style.display='none';},450);},wait);}};}
-async function readFileRows(f){var nm=f.name||'';
- if(/\.(xls|xlsx|xlsm)$/i.test(nm)){if(typeof XLSX==='undefined')throw new Error('Leitor de Excel indisponível');var buf=await f.arrayBuffer();var wb=XLSX.read(new Uint8Array(buf),{type:'array'});var ws=wb.Sheets[wb.SheetNames[0]];return XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:''});}
- var txt=await f.text();var dl=detectDelim((txt.replace(/^﻿/,'').split(/\r?\n/)[0]||''));return parseCSV(txt,dl);}
+async function pdfToText(f){if(typeof pdfjsLib==='undefined')throw new Error('leitor de PDF indisponível (recarregue a página)');var buf=await f.arrayBuffer();var pdf=await pdfjsLib.getDocument({data:new Uint8Array(buf)}).promise;var out=[];for(var p=1;p<=pdf.numPages;p++){var pg=await pdf.getPage(p);var tc=await pg.getTextContent();var lines={};tc.items.forEach(function(it){if(!it.str||!it.str.trim())return;var y=Math.round(it.transform[5]);(lines[y]=lines[y]||[]).push([it.transform[4],it.str]);});var ys=Object.keys(lines).map(Number).sort(function(a,b){return b-a;});ys.forEach(function(y){var parts=lines[y].sort(function(a,b){return a[0]-b[0];}).map(function(z){return z[1];});var s=parts.join(' ').replace(/\s+/g,' ').trim();if(s)out.push(s);});}return out.join('\n');}
+async function imgToText(f,prog){if(typeof Tesseract==='undefined')throw new Error('OCR indisponível (recarregue a página)');var r=await Tesseract.recognize(f,'por+eng',{logger:function(m){if(prog&&m.status==='recognizing text')prog.setMsg('OCR '+f.name+' — '+Math.round((m.progress||0)*100)+'%');}});return (r&&r.data&&r.data.text)||'';}
+async function readFileAny(f,prog){var nm=f.name||'';
+ if(/\.(xls|xlsx|xlsm)$/i.test(nm)){if(typeof XLSX==='undefined')throw new Error('Leitor de Excel indisponível');var buf=await f.arrayBuffer();var wb=XLSX.read(new Uint8Array(buf),{type:'array'});var ws=wb.Sheets[wb.SheetNames[0]];return {rows:XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:''})};}
+ if(/\.pdf$/i.test(nm)){return {text:await pdfToText(f)};}
+ if(/\.(png|jpe?g|gif|webp|bmp|tiff?)$/i.test(nm)){return {text:await imgToText(f,prog),ocr:true};}
+ var txt=await f.text();var dl=detectDelim((txt.replace(/^﻿/,'').split(/\r?\n/)[0]||''));return {rows:parseCSV(txt,dl)};}
 async function importFiles(files){files=[].slice.call(files);if(!files.length)return;
  var prog=showImpProgress();var all=[],lines=[];
  for(var i=0;i<files.length;i++){var f=files[i];
-  prog.setMsg('('+(i+1)+'/'+files.length+') '+f.name+' — enviando ao n8n…');
+  prog.setMsg('('+(i+1)+'/'+files.length+') '+f.name+'…');
   try{
-   if(/\.pdf$/i.test(f.name)){lines.push(f.name+': PDF não lido');continue;}
-   var rows=await readFileRows(f);
-   var resp=await fetch(WEBHOOK,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({rows:rows,filename:f.name})});
+   var got=await readFileAny(f,prog);
+   var body=got.rows?{rows:got.rows,filename:f.name}:{text:got.text,filename:f.name,ocr:!!got.ocr};
+   var resp=await fetch(WEBHOOK,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(body)});
    if(!resp.ok){lines.push(f.name+': n8n HTTP '+resp.status);continue;}
    var data=await resp.json();var list=(data&&data.rows)||[];
-   if(list.length){all=all.concat(list);lines.push(f.name+': '+list.length+' ('+(data.account||data.bank)+')');}
+   if(list.length){all=all.concat(list);lines.push(f.name+': '+list.length+' ('+(data.account||data.bank)+')'+(got.ocr?' [OCR — confira]':''));}
    else lines.push(f.name+': '+((data&&data.message)||'0 linhas'));
   }catch(e){lines.push(f.name+': erro '+e.message);}
  }
@@ -570,11 +575,14 @@ _xlsx=open(f"{SP}/xlsx.full.js",encoding="utf-8").read().replace('\ufffd','\\uff
 import os
 WEBHOOK_URL="https://webhook.ruchedigital.online/webhook/import-extrato"
 CDN_XLSX='<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>'
-# 1) artifact (parsing local, SheetJS inline, sem webhook)
+CDN_EXTRA=('<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>'
+  '<script>try{if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";}catch(e){}</script>'
+  '<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>')
+# 1) artifact (parsing local, SheetJS inline, sem webhook, sem libs externas por causa do CSP)
 p1="/Users/apple/Desktop/stripe-conciliacao/central-financeira-ruche.html"
-open(p1,"w",encoding="utf-8").write(base.replace('__WEBHOOK__','null').replace('__XLSXLOADER__','<script>'+_xlsx+'</script>'))
+open(p1,"w",encoding="utf-8").write(base.replace('__WEBHOOK__','null').replace('__XLSXLOADER__','<script>'+_xlsx+'</script>').replace('__EXTRALIBS__',''))
 print("gerado (artifact):",round(os.path.getsize(p1)/1024),"KB")
-# 2) hospedado (chama o n8n; SheetJS via CDN — hospedado não tem CSP)
+# 2) hospedado (chama o n8n; SheetJS+pdf.js+Tesseract via CDN — hospedado não tem CSP)
 p2="/Users/apple/Desktop/stripe-conciliacao/central-financeira-ruche-hosted.html"
-open(p2,"w",encoding="utf-8").write(base.replace('__WEBHOOK__', '"'+WEBHOOK_URL+'"').replace('__XLSXLOADER__',CDN_XLSX))
+open(p2,"w",encoding="utf-8").write(base.replace('__WEBHOOK__', '"'+WEBHOOK_URL+'"').replace('__XLSXLOADER__',CDN_XLSX).replace('__EXTRALIBS__',CDN_EXTRA))
 print("gerado (hosted):",round(os.path.getsize(p2)/1024),"KB")

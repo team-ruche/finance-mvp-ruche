@@ -22,7 +22,8 @@ jsCode = (
 "const rows = (body && body.rows) || [];\n"
 "const filename = (body && (body.filename || body.fname)) || '';\n"
 "const imp = buildImporter(PTAX, PLANO, HISTCAT, HISTNOTES);\n"
-"const res = imp.runImport(rows, filename);\n"
+"const _txt = body && (body.text || body.pdftext);\n"
+"const res = _txt ? imp.runImportText(_txt, filename) : imp.runImport(rows, filename);\n"
 "return [{ json: res }];\n"
 )
 

@@ -65,6 +65,32 @@ function buildImporter(PTAX, PLANO, HISTCAT, HISTNOTES){
         if(fee&&Math.abs(fee)>0.004){var p2=ptaxFor(created),fusd=p2?r2(Math.abs(fee)/p2):0;out.push(mkrow({ac:'Stripe',pm:'Stripe',da:created,pe:avail,pd:avail,av:avail,nm:'Stripe fee — '+(cust||desc||''),o:fusd,i:0,b:-Math.abs(r2(fee)),ct:'3.2.1 - Stripe Fees',nt:txn+' · fee'}));}
       }else{var amt=(net!=null)?net:(gross!=null?gross:null);if(amt==null||Math.abs(amt)<0.004)continue;var row1=mkrow({ac:'Stripe',pm:'Stripe',da:created,pd:avail,av:avail,nm:desc||cust||'Stripe',nt:note});var isIn2=setBRL(row1,amt,created);row1.pe=isIn2?created:avail;row1.ct=(cat==='fee'||cat==='other_adjustment')?'3.2.1 - Stripe Fees':classify(row1.nm,note,isIn2);out.push(row1);}
     }return out;}
+  function parseC6ccPDF(text){var L=text.split(/\r?\n/).map(function(s){return s.trim();}).filter(function(x){return x!=='';});var ym=text.match(/\d{2}\/\d{2}\/(20\d{2})/);var year=ym?ym[1]:'2026';var out=[];
+    var tipos=/^(Entrada PIX|Sa[íi]da PIX|Entrada TED|Sa[íi]da TED|Pagamento|Entradas|Sa[íi]das|Transfer[eê]ncia|Estorno|Tarifa|D[ée]bito|Cr[ée]dito|Compra|Rendimento|Resgate|Aplica[çc][ãa]o)/i;
+    // formato pdf.js: "DD/MM DD/MM Tipo Descrição R$ Valor" numa linha só
+    var reOne=/^(\d{2})\/(\d{2})\s+\d{2}\/\d{2}\s+(.+?)\s+(-?\s*R\$\s*[\d.,]+)\s*$/;
+    // formato pymupdf: DD/MM em linha isolada seguida de campos
+    var isDM=function(s){return /^\d{2}\/\d{2}$/.test(s);};
+    for(var i=0;i<L.length;i++){
+      if(/^saldo do dia/i.test(L[i]))continue;
+      var m=L[i].match(reOne),da,mid,val;
+      if(m){da=year+'-'+m[2]+'-'+m[1];mid=m[3].trim();val=pnum(m[4]);}
+      else if(isDM(L[i])&&isDM(L[i+1])){var dd=L[i].split('/');da=year+'-'+dd[1]+'-'+dd[0];mid=((L[i+2]||'')+' '+(L[i+3]||'')).trim();val=pnum(L[i+4]||'');i+=4;}
+      else continue;
+      if(val==null)continue;
+      var tm=mid.match(tipos);var tipo=tm?tm[0]:'';var desc=tm?mid.slice(tipo.length).trim():mid;
+      var nm=desc;var m1=desc.match(/recebido de (.+)$/i)||desc.match(/enviado para (.+)$/i);if(m1)nm=titlecase(m1[1].replace(/^\d+\s*/,''));
+      var pm=/pix/i.test(tipo)?'Pix':(/pagamento/i.test(tipo)?'Débito':(/ted|transfer/i.test(tipo)?'Transferência':''));
+      var row=mkrow({ac:'C6 - CC',pm:pm,da:da,pe:da,du:da,pd:da,av:da,nt:desc});var isIn=setBRL(row,val,da);row.nm=nm||desc;row.ct=classify(nm,desc,isIn);out.push(row);
+    }return out;}
+  function parseUnicredInvest(text){var cm=text.match(/Per[ií]odo de \d{2}\/\d{2}\/\d{4} a (\d{2})\/(\d{2})\/(\d{4})/);var close=cm?cm[3]+'-'+cm[2]+'-'+cm[1]:null;var out=[];
+    var mr=text.match(/Per[ií]odo\s+([\d.]+,\d{2})\s+\1/);var rend=mr?pnum(mr[1]):null;
+    var mi=text.match(/Retido\s+([\d.]+,\d{2})\s+\1/);var ir=mi?pnum(mi[1]):null;
+    if(rend&&rend>0.004){var r1=mkrow({ac:'Unicred - Invest',pm:'Rendimento',da:close,pe:close,du:close,pd:close,av:close,nt:'Rendimento do período — Demonstrativo de Rentabilidade'});setBRL(r1,rend,close);r1.nm='Rendimento RDC Unicred';r1.ct='7.1.1 - Investment Income';out.push(r1);}
+    if(ir&&ir>0.004){var r2=mkrow({ac:'Unicred - Invest',pm:'Imposto',da:close,pe:close,du:close,pd:close,av:close,nt:'IR retido — Demonstrativo de Rentabilidade'});setBRL(r2,-ir,close);r2.nm='IR Retido RDC Unicred';r2.ct='8.1.5 - Investment Income Tax (IRRF)';out.push(r2);}
+    return out;}
+  function detectPdf(text){var t=(text||'').toLowerCase();if(t.indexOf('demonstrativo de rentabilidade')>=0||(t.indexOf('recibo de dep')>=0&&t.indexOf('rdc')>=0))return 'unicredinvest';if(t.indexOf('saldo do dia')>=0&&(t.indexOf('entrada pix')>=0||t.indexOf('saída pix')>=0||t.indexOf('saida pix')>=0||t.indexOf('cheque especial')>=0))return 'c6cc';return null;}
+  function runImportText(text,fname){var b=detectPdf(text);var list=[],acc=null;if(b==='unicredinvest'){list=parseUnicredInvest(text);acc='Unicred - Invest';}else if(b==='c6cc'){list=parseC6ccPDF(text);acc='C6 - CC';}else return {bank:'generic',account:null,rows:[],message:'PDF/imagem não reconhecido automaticamente.'};for(var j=0;j<list.length;j++)refine(list[j]);return {bank:b,account:acc,rows:list};}
   function runImport(rows,fname){
     rows=(rows||[]).filter(function(r){return r&&r.length&&r.some(function(x){return String(x==null?'':x).trim()!=='';});});
     if(rows.length<2)return {bank:'empty',account:null,rows:[],message:'Arquivo sem linhas de dados.'};
@@ -81,6 +107,6 @@ function buildImporter(PTAX, PLANO, HISTCAT, HISTNOTES){
     for(var j=0;j<list.length;j++)refine(list[j]);
     return {bank:det.bank,account:det.acc,rows:list};
   }
-  return {runImport:runImport, detectFormat:detectFormat};
+  return {runImport:runImport, runImportText:runImportText, detectFormat:detectFormat};
 }
 if(typeof module!=='undefined'){module.exports={buildImporter:buildImporter};}
