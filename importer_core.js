@@ -113,6 +113,17 @@ function buildImporter(PTAX, PLANO, HISTCAT, HISTNOTES){
     for(var j=0;j<list.length;j++)refine(list[j]);
     return {bank:det.bank,account:det.acc,rows:list};
   }
-  return {runImport:runImport, runImportText:runImportText, detectFormat:detectFormat};
+  // ---- C6 API Extrato: recebe já-normalizado [{da:'YYYY-MM-DD', val:Number(±), desc, tipo}] ----
+  // Reaproveita PTAX/sinal-pelo-Tipo/classificação/histórico. O de-para do JSON real do C6
+  // fica no nó Code do workflow (campo visível/editável), não aqui.
+  function runC6Extrato(items,acc){acc=acc||'C6 - CC';var out=[];var tOUT=/^(sa[íi]da|pagamento|d[ée]bito|compra|tarifa|aplica|outros|debit)/i;var tIN=/^(entrada|cr[ée]dito|estorno|rendimento|resgate|credit)/i;
+    for(var i=0;i<(items||[]).length;i++){var it=items[i]||{};var da=it.da;var val=Number(it.val);var desc=(it.desc||it.nm||'').toString();var tipo=(it.tipo||'').toString();
+      if(!da||isNaN(val))continue;
+      var neg=tOUT.test(tipo)?true:(tIN.test(tipo)?false:(val<0));var mag=Math.abs(val);var v=neg?-mag:mag;
+      var nm=desc;var m1=desc.match(/recebido de (.+)$/i)||desc.match(/enviado para (.+)$/i);if(m1)nm=titlecase(m1[1].replace(/^\d+\s*/,''));
+      var pm=/pix/i.test(tipo+' '+desc)?'Pix':(/ted|transfer/i.test(tipo)?'Transferência':(neg?'Débito':''));
+      var row=mkrow({ac:acc,pm:pm,da:da,pe:da,du:da,pd:da,av:da,nt:desc});var isIn=setBRL(row,v,da);row.nm=nm||desc;row.ct=classify(nm,desc,isIn);refine(row);out.push(row);}
+    return {bank:'c6extrato',account:acc,rows:out};}
+  return {runImport:runImport, runImportText:runImportText, detectFormat:detectFormat, runC6Extrato:runC6Extrato};
 }
 if(typeof module!=='undefined'){module.exports={buildImporter:buildImporter};}
