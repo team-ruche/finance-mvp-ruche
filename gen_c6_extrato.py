@@ -62,10 +62,11 @@ STICKY_MAIN = (
 "### Schema da resposta (OpenAPI v1.0.0) — já mapeado\n"
 "`{entries:[{entry_date, amount(+), operation_type(INCOMING/OUTGOING), transaction_type, title, description}]}`\n"
 "Sinal vem de **operation_type** (amount é sempre positivo). Já tratado no nó *Mapear*.\n\n"
-"### FALTA preencher\n"
-"1. Confirmar o **caminho do /auth** (assumido `/v1/auth`) na página APIs → Auth.\n"
-"2. **Certificado mTLS** → importar no nó HTTP — ver nota ao lado.\n"
-"3. **Segredos** em env do n8n (`C6_CLIENT_ID`, `C6_CLIENT_SECRET`) ou credencial — **nunca no git**.\n"
+"### Auth confirmado (OpenAPI v1.1.2)\n"
+"POST `/v1/auth` (form-urlencoded) → `{access_token, expires_in:300, token_type, scope}`. Token expira em ~10 min. Sandbox seg-sex 07-22h.\n\n"
+"### FALTA preencher (só isto)\n"
+"1. **Certificado mTLS** (.crt/.key, vem junto das credenciais sandbox) → importar nos 2 nós HTTP — ver nota ao lado.\n"
+"2. **Segredos** `C6_CLIENT_ID`/`C6_CLIENT_SECRET` em env do n8n ou credencial — **nunca no git**.\n"
 )
 STICKY_MTLS = (
 "### mTLS + segredos\n"
