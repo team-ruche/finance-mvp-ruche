@@ -51,10 +51,13 @@ STICKY_MAIN = (
 "  params **`start_date`** e **`end_date`** (YYYY-MM-DD, **máx. 30 dias**)\n"
 "  header `Authorization: Bearer {token}`\n"
 "- ⚠️ **mTLS obrigatório** — certificado **.crt/.key** que vem com as credenciais.\n\n"
-"### FALTA preencher (fica na página da API / portal)\n"
-"1. **URL base (host)** do sandbox/produção → definir env **C6_BASE** (ex.: https://baas.c6bank.com.br).\n"
-"2. **Nomes dos campos** do JSON de /statement → ajustar o de-para no nó *Mapear*.\n"
-"3. **Certificado mTLS** → importar no nó HTTP (Options → SSL) — ver nota ao lado.\n"
+"### Hosts (do portal)\n"
+"- **Sandbox:** `https://baas-api-sandbox.c6bank.info/v1` (já preenchido)\n"
+"- **Produção:** `https://baas-api.c6bank.info/v1` (trocar ao ir pra prod)\n\n"
+"### FALTA preencher\n"
+"1. **Nomes dos campos** do JSON de /statement → ajustar o de-para no nó *Mapear* (baixar o **OpenAPI** na página da API).\n"
+"2. Confirmar o **caminho do /auth** (assumido `/v1/auth`) na página APIs → Auth / no OpenAPI.\n"
+"3. **Certificado mTLS** → importar no nó HTTP — ver nota ao lado.\n"
 "4. **Segredos** em env do n8n (`C6_CLIENT_ID`, `C6_CLIENT_SECRET`) ou credencial — **nunca no git**.\n"
 )
 STICKY_MTLS = (
@@ -77,7 +80,7 @@ wf = {
      "id":"trg_manual","name":"Executar manualmente","type":"n8n-nodes-base.manualTrigger","typeVersion":1,"position":[560,120]},
     {"parameters":{
         "method":"POST",
-        "url":"={{ $env.C6_BASE }}/auth",
+        "url":"https://baas-api-sandbox.c6bank.info/v1/auth",
         "sendHeaders":True,
         "headerParameters":{"parameters":[{"name":"Content-Type","value":"application/x-www-form-urlencoded"}]},
         "sendBody":True,
@@ -93,7 +96,7 @@ wf = {
      "notes":"mTLS: importar certificado .crt/.key (Options → SSL)"},
     {"parameters":{
         "method":"GET",
-        "url":"={{ $env.C6_BASE }}/statement",
+        "url":"https://baas-api-sandbox.c6bank.info/v1/statement",
         "sendHeaders":True,
         "headerParameters":{"parameters":[{"name":"Authorization","value":"=Bearer {{ $json.access_token }}"}]},
         "sendQuery":True,

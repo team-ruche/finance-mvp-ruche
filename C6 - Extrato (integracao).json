@@ -3,7 +3,7 @@
  "nodes": [
   {
    "parameters": {
-    "content": "## C6 · Extrato → Master Journal  (ESQUELETO — INATIVO)\n\nFonte: **Roteiro de Testes C6 Developers v3.0** (conta PJ confirmada).\n\n### CONFIRMADO no roteiro\n- **Auth:** POST **/auth** · `Content-Type: application/x-www-form-urlencoded`\n  body: `client_id`, `client_secret`, `grant_type=client_credentials`\n  → resposta `{access_token, expires_in:300, token_type:\"Bearer\", scope}` (token vale **5 min**)\n- **Extrato:** GET **/statement** · escopo **`statement.read`**\n  params **`start_date`** e **`end_date`** (YYYY-MM-DD, **máx. 30 dias**)\n  header `Authorization: Bearer {token}`\n- ⚠️ **mTLS obrigatório** — certificado **.crt/.key** que vem com as credenciais.\n\n### FALTA preencher (fica na página da API / portal)\n1. **URL base (host)** do sandbox/produção → definir env **C6_BASE** (ex.: https://baas.c6bank.com.br).\n2. **Nomes dos campos** do JSON de /statement → ajustar o de-para no nó *Mapear*.\n3. **Certificado mTLS** → importar no nó HTTP (Options → SSL) — ver nota ao lado.\n4. **Segredos** em env do n8n (`C6_CLIENT_ID`, `C6_CLIENT_SECRET`) ou credencial — **nunca no git**.\n",
+    "content": "## C6 · Extrato → Master Journal  (ESQUELETO — INATIVO)\n\nFonte: **Roteiro de Testes C6 Developers v3.0** (conta PJ confirmada).\n\n### CONFIRMADO no roteiro\n- **Auth:** POST **/auth** · `Content-Type: application/x-www-form-urlencoded`\n  body: `client_id`, `client_secret`, `grant_type=client_credentials`\n  → resposta `{access_token, expires_in:300, token_type:\"Bearer\", scope}` (token vale **5 min**)\n- **Extrato:** GET **/statement** · escopo **`statement.read`**\n  params **`start_date`** e **`end_date`** (YYYY-MM-DD, **máx. 30 dias**)\n  header `Authorization: Bearer {token}`\n- ⚠️ **mTLS obrigatório** — certificado **.crt/.key** que vem com as credenciais.\n\n### Hosts (do portal)\n- **Sandbox:** `https://baas-api-sandbox.c6bank.info/v1` (já preenchido)\n- **Produção:** `https://baas-api.c6bank.info/v1` (trocar ao ir pra prod)\n\n### FALTA preencher\n1. **Nomes dos campos** do JSON de /statement → ajustar o de-para no nó *Mapear* (baixar o **OpenAPI** na página da API).\n2. Confirmar o **caminho do /auth** (assumido `/v1/auth`) na página APIs → Auth / no OpenAPI.\n3. **Certificado mTLS** → importar no nó HTTP — ver nota ao lado.\n4. **Segredos** em env do n8n (`C6_CLIENT_ID`, `C6_CLIENT_SECRET`) ou credencial — **nunca no git**.\n",
     "height": 470,
     "width": 440,
     "color": 6
@@ -47,7 +47,7 @@
   {
    "parameters": {
     "method": "POST",
-    "url": "={{ $env.C6_BASE }}/auth",
+    "url": "https://baas-api-sandbox.c6bank.info/v1/auth",
     "sendHeaders": true,
     "headerParameters": {
      "parameters": [
@@ -90,7 +90,7 @@
   {
    "parameters": {
     "method": "GET",
-    "url": "={{ $env.C6_BASE }}/statement",
+    "url": "https://baas-api-sandbox.c6bank.info/v1/statement",
     "sendHeaders": true,
     "headerParameters": {
      "parameters": [
