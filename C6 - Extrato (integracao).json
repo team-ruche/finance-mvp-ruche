@@ -19,7 +19,7 @@
   },
   {
    "parameters": {
-    "content": "### mTLS + segredos\n- Certificado **.crt/.key** é **obrigatório** nas 2 chamadas.\n- n8n self-hosted: configurar o **certificado cliente** no nó HTTP Request\n  (Options → *SSL Certificates*) ou via HTTPS agent. Ver doc do n8n.\n- Variáveis: **C6_BASE**, **C6_CLIENT_ID**, **C6_CLIENT_SECRET** nas *Environment Variables* do n8n.\n  (Se o acesso a env estiver bloqueado, cole os valores direto no nó — menos seguro.)",
+    "content": "### mTLS via PROXY nginx (validado 22/09)\n- Testado por fora: mTLS + /auth 200 + escopo statement.read OK.\n- n8n **não** apresenta certificado cliente nativamente → usar **proxy nginx**\n  que apresenta o .crt/.key ao C6. n8n chama o proxy em texto puro.\n- Definir env **C6_BASE** = URL do proxy, ex.: `http://127.0.0.1:8686/v1`\n  (sandbox) — trocar upstream do proxy p/ produção depois.\n- Segredos **C6_CLIENT_ID**/**C6_CLIENT_SECRET** em env do n8n (nunca no git).\n- Config do proxy: `c6-proxy.nginx.conf` no repo.",
     "height": 230,
     "width": 340,
     "color": 3
@@ -47,7 +47,7 @@
   {
    "parameters": {
     "method": "POST",
-    "url": "https://baas-api-sandbox.c6bank.info/v1/auth",
+    "url": "={{ $env.C6_BASE }}/auth",
     "sendHeaders": true,
     "headerParameters": {
      "parameters": [
@@ -90,7 +90,7 @@
   {
    "parameters": {
     "method": "GET",
-    "url": "https://baas-api-sandbox.c6bank.info/v1/statement",
+    "url": "={{ $env.C6_BASE }}/statement",
     "sendHeaders": true,
     "headerParameters": {
      "parameters": [
