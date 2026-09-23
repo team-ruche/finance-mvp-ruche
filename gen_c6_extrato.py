@@ -6,24 +6,27 @@ ptax=open(f'{SP}/ptax.json',encoding='utf-8').read()
 plano=open(f'{SP}/plano.json',encoding='utf-8').read()
 histcat=open(f'{SP}/histcat.json',encoding='utf-8').read()
 histnotes=open(f'{SP}/histnotes.json',encoding='utf-8').read()
+sha1js=open(f'{SP}/_sha1.js',encoding='utf-8').read()
 
-# ---- Code node: de-para do JSON real de /statement (VISÍVEL/EDITÁVEL) + regras do core ----
+# ---- Code node: C6 /statement -> linhas do finance_journal (com dedup) ----
 codeNode = (
-"// ===== C6 /statement -> linhas do Master Journal =====\n"
-"// De-para conforme OpenAPI 'Extrato' v1.0.0 (schema StatementResponse/Entries).\n"
-"// GET /statement -> { entries:[ {entry_date, amount(str +), operation_type, transaction_type, title, description, ...} ] }\n"
+"// ===== C6 /statement -> finance_journal =====\n"
+"// De-para conforme OpenAPI 'Extrato' v1.0.0 (StatementResponse/Entries) + esquema finance_journal.\n"
+"// Sinal vem de operation_type (amount e sempre positivo). Grava via upsert on_conflict=dedup_key.\n"
 "const PTAX = " + ptax + ";\n"
 "const PLANO = " + plano + ";\n"
 "const HISTCAT = " + histcat + ";\n"
 "const HISTNOTES = " + histnotes + ";\n"
++ sha1js + "\n"
 + core + "\n"
 "const imp = buildImporter(PTAX, PLANO, HISTCAT, HISTNOTES);\n"
+"const r2 = n => Math.round((Number(n)||0)*100)/100;\n"
 "\n"
 "// 1) corpo da resposta do no 'C6 · GET /statement'\n"
 "const body = $input.first().json;\n"
 "const raw = Array.isArray(body.entries) ? body.entries : (Array.isArray(body) ? body : []);\n"
 "\n"
-"// 2) de-para (campos reais do C6). Sinal vem de operation_type (amount e sempre positivo).\n"
+"// 2) de-para dos campos reais do C6\n"
 "const num = s => { const n = Number(String(s).replace(/\\.(?=\\d{3}\\b)/g,'').replace(',', '.')); return isNaN(Number(s)) ? n : Number(s); };\n"
 "const PIX_TT = /PIX|QRCODE/i, TRANSFER_TT = /TRANSFER/i, CARD_TT = /CARD_SALE|TAG|PARKY|TAGGY/i;\n"
 "const norm = raw.map(t => {\n"
@@ -32,17 +35,44 @@ codeNode = (
 "  const pm = PIX_TT.test(tt) ? 'Pix' : (TRANSFER_TT.test(tt) ? 'Transferência' : (CARD_TT.test(tt) ? 'Cartão' : (income ? '' : 'Débito')));\n"
 "  const desc = [t.title, t.description].filter(Boolean).join(' — ');\n"
 "  return {\n"
-"    da:   String(t.entry_date || '').slice(0,10),   // YYYY-MM-DD\n"
-"    val:  num(t.amount),                            // positivo; sinal aplicado abaixo\n"
+"    da:   String(t.entry_date || '').slice(0,10),\n"
+"    val:  num(t.amount),\n"
 "    desc: desc,\n"
-"    tipo: income ? 'Entrada' : 'Saída',             // define o sinal no core\n"
-"    pm:   pm\n"
+"    tipo: income ? 'Entrada' : 'Saída',\n"
+"    pm:   pm,\n"
+"    ref:  t.reference || t.local_reference || '',\n"
+"    ttype: tt\n"
 "  };\n"
 "}).filter(x => /^\\d{4}-\\d{2}-\\d{2}$/.test(x.da) && !isNaN(x.val));\n"
 "\n"
-"// 3) PTAX + sinal-pelo-Tipo + classificacao + historico (mesmas regras dos outros bancos)\n"
+"// 3) PTAX + sinal-pelo-Tipo + classificacao + historico\n"
 "const res = imp.runC6Extrato(norm, 'C6 - CC');\n"
-"return res.rows.map(r => ({ json: r }));\n"
+"\n"
+"// 4) mapeia para o esquema finance_journal (igual Stripe/Asaas), com dedup_key\n"
+"const rows = res.rows.map(r => {\n"
+"  const inflow = r2(r.i||0), outflow = r2(r.o||0), brl = r2(r.b||0);\n"
+"  const usd = inflow > 0 ? inflow : outflow;\n"
+"  const amount_usd = brl < 0 ? -outflow : inflow;\n"
+"  const ptax = usd > 0 ? Math.round(Math.abs(brl)/usd*10000)/10000 : null;\n"
+"  const ct = String(r.ct||''); const code = ct.split(' - ')[0].trim(); const cname = ct.split(' - ').slice(1).join(' - ').trim();\n"
+"  const income = brl >= 0;\n"
+"  const ref = r.ref || (r.pd + '|' + brl.toFixed(2) + '|' + (r.nm||''));\n"
+"  return {\n"
+"    period: String(r.pe || r.pd || '').slice(0,7),\n"
+"    txn_date: r.pd, payment_date: r.pd,\n"
+"    source: 'C6 - CC', account: 'C6 CC (BRL)',\n"
+"    counterparty: r.nm || '', description: r.nt || r.nm || '',\n"
+"    payment_method: r.pm || '',\n"
+"    inflow: inflow, outflow: outflow,\n"
+"    native_amount: brl, native_currency: 'BRL', ptax: ptax,\n"
+"    amount_usd: amount_usd, amount_brl: brl,\n"
+"    account_code: code, account_name: cname,\n"
+"    status: income ? 'Received' : 'Paid',\n"
+"    notes: '[auto-c6] ' + (r.ttype||'') + ' ' + (r.ref||''),\n"
+"    dedup_key: sha1('c6:' + ref)\n"
+"  };\n"
+"});\n"
+"return [{ json: { rows, count: rows.length } }];\n"
 )
 
 STICKY_MAIN = (
@@ -80,7 +110,7 @@ STICKY_MTLS = (
 )
 
 wf = {
-  "name": "C6 - Extrato (integração) [ESQUELETO]",
+  "name": "C6 - Extrato (integração)",
   "nodes": [
     {"parameters":{"content":STICKY_MAIN,"height":470,"width":440,"color":6},
      "id":"note_main","name":"LEIA-ME","type":"n8n-nodes-base.stickyNote","typeVersion":1,"position":[80,40]},
@@ -119,12 +149,30 @@ wf = {
      "id":"http_stmt","name":"C6 · GET /statement","type":"n8n-nodes-base.httpRequest","typeVersion":4.2,"position":[1000,120],
      "notes":"mTLS: mesmo certificado. Escopo statement.read. Máx 30 dias."},
     {"parameters":{"jsCode":codeNode},
-     "id":"code_map","name":"Mapear /statement → Master Journal","type":"n8n-nodes-base.code","typeVersion":2,"position":[1220,120]}
+     "id":"code_map","name":"Montar linhas (finance_journal)","type":"n8n-nodes-base.code","typeVersion":2,"position":[1220,120]},
+    {"parameters":{
+        "method":"POST",
+        "url":"https://api.ruchedigital.com/rest/v1/finance_journal?on_conflict=dedup_key",
+        "authentication":"predefinedCredentialType",
+        "nodeCredentialType":"supabaseApi",
+        "sendHeaders":True,
+        "headerParameters":{"parameters":[
+            {"name":"Prefer","value":"resolution=merge-duplicates,return=representation"},
+            {"name":"Content-Type","value":"application/json"}]},
+        "sendBody":True,
+        "contentType":"raw",
+        "rawContentType":"application/json",
+        "body":"={{ JSON.stringify($json.rows) }}",
+        "options":{"response":{"response":{"neverError":True,"fullResponse":True}}}
+     },
+     "id":"sb_upsert","name":"Supabase upsert (finance_journal)","type":"n8n-nodes-base.httpRequest","typeVersion":4.2,"position":[1440,120],
+     "credentials":{"supabaseApi":{"id":"9Sq6hZefK0R6kZhu","name":"BD - Supabase Self-Hosted (supabaseApi)"}}}
   ],
   "connections": {
     "Executar manualmente":{"main":[[{"node":"C6 · POST /auth","type":"main","index":0}]]},
     "C6 · POST /auth":{"main":[[{"node":"C6 · GET /statement","type":"main","index":0}]]},
-    "C6 · GET /statement":{"main":[[{"node":"Mapear /statement → Master Journal","type":"main","index":0}]]}
+    "C6 · GET /statement":{"main":[[{"node":"Montar linhas (finance_journal)","type":"main","index":0}]]},
+    "Montar linhas (finance_journal)":{"main":[[{"node":"Supabase upsert (finance_journal)","type":"main","index":0}]]}
   },
   "settings":{"executionOrder":"v1"},
   "active": False

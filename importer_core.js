@@ -122,7 +122,7 @@ function buildImporter(PTAX, PLANO, HISTCAT, HISTNOTES){
       var neg=tOUT.test(tipo)?true:(tIN.test(tipo)?false:(val<0));var mag=Math.abs(val);var v=neg?-mag:mag;
       var nm=desc;var m1=desc.match(/recebido de (.+)$/i)||desc.match(/enviado para (.+)$/i);if(m1)nm=titlecase(m1[1].replace(/^\d+\s*/,''));
       var pm=it.pm||(/pix/i.test(tipo+' '+desc)?'Pix':(/ted|transfer/i.test(tipo+' '+desc)?'Transferência':(neg?'Débito':'')));
-      var row=mkrow({ac:acc,pm:pm,da:da,pe:da,du:da,pd:da,av:da,nt:desc});var isIn=setBRL(row,v,da);row.nm=nm||desc;row.ct=classify(nm,desc,isIn);refine(row);out.push(row);}
+      var row=mkrow({ac:acc,pm:pm,da:da,pe:da,du:da,pd:da,av:da,nt:desc});var isIn=setBRL(row,v,da);row.nm=nm||desc;row.ct=classify(nm,desc,isIn);refine(row);row.ref=it.ref||'';row.ttype=it.ttype||'';out.push(row);}
     return {bank:'c6extrato',account:acc,rows:out};}
   return {runImport:runImport, runImportText:runImportText, detectFormat:detectFormat, runC6Extrato:runC6Extrato};
 }
