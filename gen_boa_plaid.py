@@ -100,7 +100,9 @@ wf = {
     {"parameters":{"content":STICKY,"height":360,"width":420,"color":6},
      "id":"note","name":"LEIA-ME","type":"n8n-nodes-base.stickyNote","typeVersion":1,"position":[80,40]},
     {"parameters":{},
-     "id":"trg","name":"Executar manualmente","type":"n8n-nodes-base.manualTrigger","typeVersion":1,"position":[560,140]},
+     "id":"trg","name":"Executar manualmente","type":"n8n-nodes-base.manualTrigger","typeVersion":1,"position":[560,60]},
+    {"parameters":{"rule":{"interval":[{"field":"days","triggerAtHour":6,"triggerAtMinute":20}]}},
+     "id":"trg_sched","name":"Agendado (diário 06:20)","type":"n8n-nodes-base.scheduleTrigger","typeVersion":1.2,"position":[560,240]},
     {"parameters":{"jsCode":codeNode},
      "id":"code","name":"Plaid sync → linhas (finance_journal)","type":"n8n-nodes-base.code","typeVersion":2,"position":[780,140]},
     {"parameters":{
@@ -121,6 +123,7 @@ wf = {
   ],
   "connections": {
     "Executar manualmente":{"main":[[{"node":"Plaid sync → linhas (finance_journal)","type":"main","index":0}]]},
+    "Agendado (diário 06:20)":{"main":[[{"node":"Plaid sync → linhas (finance_journal)","type":"main","index":0}]]},
     "Plaid sync → linhas (finance_journal)":{"main":[[{"node":"Supabase upsert (finance_journal)","type":"main","index":0}]]}
   },
   "settings":{"executionOrder":"v1"},

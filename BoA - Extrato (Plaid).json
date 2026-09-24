@@ -25,7 +25,28 @@
    "typeVersion": 1,
    "position": [
     560,
-    140
+    60
+   ]
+  },
+  {
+   "parameters": {
+    "rule": {
+     "interval": [
+      {
+       "field": "days",
+       "triggerAtHour": 6,
+       "triggerAtMinute": 20
+      }
+     ]
+    }
+   },
+   "id": "trg_sched",
+   "name": "Agendado (diário 06:20)",
+   "type": "n8n-nodes-base.scheduleTrigger",
+   "typeVersion": 1.2,
+   "position": [
+    560,
+    240
    ]
   },
   {
@@ -91,6 +112,17 @@
  ],
  "connections": {
   "Executar manualmente": {
+   "main": [
+    [
+     {
+      "node": "Plaid sync → linhas (finance_journal)",
+      "type": "main",
+      "index": 0
+     }
+    ]
+   ]
+  },
+  "Agendado (diário 06:20)": {
    "main": [
     [
      {
