@@ -124,6 +124,12 @@ function buildImporter(PTAX, PLANO, HISTCAT, HISTNOTES){
       var pm=it.pm||(/pix/i.test(tipo+' '+desc)?'Pix':(/ted|transfer/i.test(tipo+' '+desc)?'Transferência':(neg?'Débito':'')));
       var row=mkrow({ac:acc,pm:pm,da:da,pe:da,du:da,pd:da,av:da,nt:desc});var isIn=setBRL(row,v,da);row.nm=nm||desc;row.ct=classify(nm,desc,isIn);refine(row);row.ref=it.ref||'';row.ttype=it.ttype||'';out.push(row);}
     return {bank:'c6extrato',account:acc,rows:out};}
-  return {runImport:runImport, runImportText:runImportText, detectFormat:detectFormat, runC6Extrato:runC6Extrato};
+  // ---- BoA via Plaid: recebe [{da:'YYYY-MM-DD', amt:Number(± USD, + = entrada), nm, nt, ref, ttype}] ----
+  // Reaproveita a classificacao do BoA (pmBoA + classify + historico). amt ja vem com sinal na
+  // convencao interna (+ entrada / - saida); no Plaid amount>0 e saida, entao inverter antes de chamar.
+  function runBoAPlaid(items){var out=[];for(var i=0;i<(items||[]).length;i++){var it=items[i]||{};var da=it.da;var amt=Number(it.amt);var nm=(it.nm||'').toString();if(!da||isNaN(amt))continue;
+    var row=mkrow({ac:'BoA',pm:pmBoA(nm),da:da,pe:da,du:da,pd:da,av:da,nt:it.nt||nm});var isIn=setUSD(row,amt,da);row.nm=nm;row.ct=classify(nm,it.nt||'',isIn);refine(row);row.ref=it.ref||'';row.ttype=it.ttype||'';out.push(row);}
+    return {bank:'boaplaid',account:'BoA',rows:out};}
+  return {runImport:runImport, runImportText:runImportText, detectFormat:detectFormat, runC6Extrato:runC6Extrato, runBoAPlaid:runBoAPlaid};
 }
 if(typeof module!=='undefined'){module.exports={buildImporter:buildImporter};}
