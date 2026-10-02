@@ -25,9 +25,10 @@ h1{font-size:24px;margin:8px 0 4px}
 .flow{font-size:12.5px;color:var(--mut);margin-bottom:12px}.flow b{color:var(--ink)}
 .top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding-bottom:12px;border-bottom:2px solid var(--ln2)}
 .selrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:flex-end}
-.msel{display:inline-flex;background:var(--sunk);border:1px solid var(--ln2);border-radius:9px;overflow:hidden;flex-wrap:wrap}
+.msel{display:inline-flex;background:var(--sunk);border:1px solid var(--ln2);border-radius:9px;overflow:hidden;flex-wrap:nowrap}
 .mesb{appearance:none;background:transparent;border:0;border-right:1px solid var(--ln2);color:var(--fnt);font:inherit;font-size:12px;font-weight:700;letter-spacing:.04em;padding:7px 11px;cursor:pointer}
 .mesb:focus{outline:2px solid var(--acc);outline-offset:-2px}
+.mesb.on{background:var(--acc);color:#fff}
 #ceoroot{margin-left:auto;flex:none;align-self:center;font-size:12px;font-weight:600;color:var(--acc);background:var(--asf);border:1px solid var(--acc);padding:4px 10px;border-radius:999px;white-space:nowrap}
 .mb{font:600 13px var(--ss);color:var(--mut);background:none;border:0;padding:8px 13px;cursor:pointer}.mb[aria-pressed="true"]{background:var(--acc);color:#fff}
 .mb:focus-visible,.tb:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
@@ -65,10 +66,13 @@ svg{display:block;width:100%;height:auto}.gl{stroke:var(--ln);stroke-width:1}.ax
 .ceobtn:hover{color:var(--fnt);border-color:var(--acc)}
 #ceot .gi{width:104px;text-align:right;font-variant-numeric:tabular-nums;background:var(--bg);color:var(--acc);font-weight:600;border:1px solid var(--ln);border-radius:7px;padding:3px 7px;font-size:13px}
 #ceot .gi:focus{outline:2px solid var(--acc);outline-offset:1px}
-#ceot tr.sec td{background:var(--sunk);font-weight:700;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut)}
-#ceot tr.tt td{font-weight:700;background:var(--sunk)}
+#ceot tr.sec td{background:var(--asf);font-weight:800;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--acc);border-top:2px solid var(--acc);border-bottom:1px solid var(--acc)}
+#ceot tr.tt td{font-weight:800;background:var(--sunk);border-top:1px solid var(--ln2);border-bottom:1px solid var(--ln2);color:var(--fnt)}
 #ceot .src{display:inline-block;font-size:10px;font-weight:600;padding:1px 6px;border-radius:999px;background:var(--sunk);color:var(--mut);margin-left:6px;white-space:nowrap}
 #ceot .src.w{border:1px solid var(--dn);color:var(--dn)}.co.r{background:var(--dns);border-left-color:var(--dn)}.co p{margin:0;font-size:13.5px}.co p+p{margin-top:7px}
+#pane-dre .stw{max-height:calc(100vh - 150px);overflow:auto}
+#dret thead th{position:sticky;top:0;z-index:3;background:var(--card);box-shadow:inset 0 -1px 0 var(--ln2)}
+.av2{display:block;font-style:normal;font-size:10px;font-weight:600;color:var(--mut);margin-top:1px}
 .stw{overflow-x:auto;border:1px solid var(--ln);border-radius:12px;background:var(--card);box-shadow:var(--sh);margin-top:12px;max-width:100%}
 table.st{border-collapse:collapse;width:100%;min-width:640px;font-size:13px}table.st th,table.st td{padding:8px 12px;border-bottom:1px solid var(--ln);text-align:left}table.st thead th{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);font-weight:700;background:var(--sunk);position:sticky;top:0}table.st td.n,table.st th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}table.st tr.tot td{font-weight:700;background:var(--asf);border-top:1px solid var(--ln2)}table.st tr.sub td{font-weight:600}table.st tr.item td:first-child{padding-left:28px;color:var(--mut)}table.st tr:last-child td{border-bottom:none}
 .cd{font-family:var(--sm);font-size:11px;color:var(--fnt);margin-right:6px}.neg{color:var(--dn)}.pos{color:var(--up)}
@@ -166,7 +170,6 @@ table.mj input.ce,table.mj select.ce{font:12px var(--ss);color:var(--ink);backgr
     <p class="sub" id="ceosub"></p>
     <div class="ceobar">
       <span class="ceopace">Proporcional <b id="ceopace">—</b> <i id="ceopacei"></i></span>
-      <label class="ceoseed">Saldo inicial de caixa <input type="number" id="ceoseed" step="0.01"></label>
       <button class="ceobtn" type="button" id="ceoreset">Restaurar metas</button>
     </div>
     <div class="stw"><table class="st" id="ceot"><thead><tr><th>Métrica</th><th class="n">Monthly Goal</th><th class="n">MTD Target</th><th class="n">MTD Actual</th><th class="n">Gap</th><th class="n">vs MTD</th></tr></thead><tbody></tbody></table></div>
@@ -189,7 +192,6 @@ table.mj input.ce,table.mj select.ce{font:12px var(--ss);color:var(--ink);backgr
   <div class="fullw"><div class="mjscroll"><table class="mj" id="mjt"><thead></thead><tbody></tbody></table></div></div>
   <div class="co" style="margin:14px 16px 0"><p><b>Marcas:</b> <span class="fg d">DUP</span> possível duplicata · <span class="fg">COMP</span> competência ≠ mês do pagamento · <span class="fg">S/CONTA</span> sem conta · <span class="fg">S/DATA</span> sem data de pagamento · <span class="fg i">IMPORT</span> importada (confira e marque Reconciled). Editar/importar não altera a planilha original — fica neste navegador; use <b>Exportar CSV</b> para levar.</p></div>
 </div>
-<div class="co" style="margin-top:24px"><p><b>Fonte hoje:</b> planilha auditada (meses 5, 6, 7 e agosto até dia 12). Stripe e Asaas já entram automático; Bank of America e Wise entram em seguida; C6 e Unicred aguardam liberação das APIs. Quando os extratos preencherem esta lista, DRE, Fluxo de Caixa e Resumo continuam saindo do Master Journal.</p></div>
 </div></div>
 <div id="impmodal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:80;align-items:center;justify-content:center;padding:16px">
  <div style="background:var(--card);border:1px solid var(--ln2);border-radius:14px;max-width:580px;width:100%;padding:20px;box-shadow:var(--sh);color:var(--ink);font-family:var(--ss)">
@@ -340,13 +342,23 @@ function panels(){const R=resumoCur(),D=dreCur();const exp=R.cats.reduce((a,c)=>
 
 /* ===== DRE ===== */
 function renderDRE(){const Ds={};MONTHS.forEach(m=>Ds[m]=dreFor(m));const Dsel=dreCur();const nrCur=Dsel.agg.net_revenue||1;const range=curMode==='range';
-  document.getElementById('dresub').textContent='Empresa: '+curEmp+' · por competência. '+(range?'Coluna PERÍODO = '+curLabel()+'. ':'')+'A coluna % é sobre a receita líquida de '+curLabel()+'.';
-  let head='<tr><th>Linha</th>'+(range?'<th class="n" style="color:var(--acc);font-weight:800">PERÍODO</th>':'')+'<th class="n">MAI</th><th class="n">JUN</th><th class="n">JUL</th><th class="n">AGO</th><th class="n">% receita</th></tr>';
-  document.querySelector('#dret thead').innerHTML=head;
-  document.querySelector('#dret tbody').innerHTML=P.dre.map(l=>{const cls=l.lvl==='tot'?'tot':(l.lvl==='sub'?'sub':'item');const cell=(D,acc)=>{const v=lineVal(l,D);return '<td class="n'+(v<0?' neg':'')+'"'+(acc?' style="color:var(--acc)"':'')+'>'+(v===0||v===null?'—':f0(v))+'</td>';};const vc=lineVal(l,Dsel),pct=nrCur?100*(vc||0)/nrCur:0;
+  const MA=['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+  const COLS_M=MONTHS.slice(-5);   /* últimos meses com movimento, para acompanhar o ano */
+  document.getElementById('dresub').textContent='Empresa: '+curEmp+' · por competência. '+(range?'Coluna PERÍODO = '+curLabel()+'. ':'')+'Sob cada totalizador vem a análise vertical do próprio mês (% da receita líquida daquele mês); a última coluna é sobre a receita líquida de '+curLabel()+'.';
+  document.querySelector('#dret thead').innerHTML='<tr><th>Linha</th>'+(range?'<th class="n" style="color:var(--acc);font-weight:800">PERÍODO</th>':'')+
+    COLS_M.map(m=>'<th class="n">'+MA[+m.slice(5,7)-1]+'</th>').join('')+'<th class="n">% receita</th></tr>';
+  document.querySelector('#dret tbody').innerHTML=P.dre.map(l=>{
+    const cls=l.lvl==='tot'?'tot':(l.lvl==='sub'?'sub':'item');
+    const cell=(D,acc)=>{const v=lineVal(l,D);const nr=D.agg.net_revenue||0;
+      const avp=(cls==='tot'&&nr&&v)?'<i class="av2">'+(100*v/nr).toFixed(1).replace('.',',')+'%</i>':'';
+      return '<td class="n'+(v<0?' neg':'')+'"'+(acc?' style="color:var(--acc)"':'')+'>'+(v===0||v===null?'—':f0(v))+avp+'</td>';};
+    const vc=lineVal(l,Dsel),pct=nrCur?100*(vc||0)/nrCur:0;
     var fc=(cls!=='item')?famColorSolid(l.code):null;var acc=fc?' style="box-shadow:inset 4px 0 0 '+fc+'"':'';
-    return '<tr class="'+cls+'"'+acc+'><td>'+(l.code?'<span class="cd">'+l.code+'</span>':'')+l.name+'</td>'+(range?cell(Dsel,true):'')+cell(Ds['2026-05'])+cell(Ds['2026-06'])+cell(Ds['2026-07'])+cell(Ds['2026-08'])+'<td class="n" style="color:var(--fnt)">'+(vc?pct.toFixed(1).replace('.',',')+'%':'—')+'</td></tr>';}).join('');
-  if(!range)document.querySelectorAll('#dret thead th').forEach((th,i)=>{if(i>=1&&i<=4){const m=MONTHS[i-1];th.style.color=(m===cur)?cv('--acc'):'';th.style.fontWeight=(m===cur)?'800':'';}});}
+    return '<tr class="'+cls+'"'+acc+'><td>'+(l.code?'<span class="cd">'+l.code+'</span>':'')+l.name+'</td>'+(range?cell(Dsel,true):'')+
+      COLS_M.map(m=>cell(Ds[m])).join('')+'<td class="n" style="color:var(--fnt)">'+(vc?pct.toFixed(1).replace('.',',')+'%':'—')+'</td></tr>';}).join('');
+  const off=range?2:1;
+  document.querySelectorAll('#dret thead th').forEach((th,i)=>{const m=COLS_M[i-off];
+    if(m){th.style.color=(!range&&m===cur)?cv('--acc'):'';th.style.fontWeight=(!range&&m===cur)?'800':'';}});}
 /* ===== FDC ===== */
 function renderFDC(){const F=fdcCur();document.getElementById('fdcsub').textContent='Empresa: '+curEmp+' · '+curLabel()+' · posição de caixa por conta, pela Payment Date (igual à aba FDC da planilha).';
   const cards=[['Entradas',F.tot[0],'var(--up)'],['Saídas',F.tot[1],'var(--dn)'],['Caixa líquido do período',F.tot[2],F.tot[2]>=0?'var(--up)':'var(--dn)']];
@@ -578,66 +590,67 @@ function renderResumo(){kpis();chart1();panels();}
    de período e empresa do topo. Metas são manuais e ficam salvas no navegador.
    Sales (TCV/Qty) usa P.sales automaticamente assim que essa fonte existir. */
 const CEO_CONTAS=['Stripe','Asaas','BoA','Unicred - CC','Unicred - Cartão','Unicred - Invest','C6 - CC','C6 - Cartão','PayPal','Payoneer','Wise - Cris','Wise - Ruche'];
-const CEO_DEF={tcv:60000,qty:32,ccNew:27972,ccPrior:11003,cash:73944,nr:37984,eb:5698,mg:15,seed:0,tcvA:null,qtyA:null};
+const CEO_DEF={tcv:60000,qty:32,ccNew:27972,ccPrior:11003,cash:73944,nr:37984,eb:5698,mg:15};
 let CEOG=(function(){try{return Object.assign({},CEO_DEF,JSON.parse(localStorage.getItem('ruche_ceo')||'{}'));}catch(e){return Object.assign({},CEO_DEF);}})();
 function ceoSave(){try{localStorage.setItem('ruche_ceo',JSON.stringify(CEOG));}catch(e){}}
 
 function ceoCalc(){
-  const b=curBounds(), D=dreCur(), F=fdcCur(), a=D.agg;
+  const b=curBounds(), D=dreCur(), a=D.agg;
   const netRev=a.net_revenue, ebitda=a.ebitda;
   const custos=r2(a.cogs+a.fixed+a.opex);
   const margem=netRev?r2(ebitda/netRev*100):0;
-  /* Cash Collected: entradas de receita (família 1) pela data de pagamento.
-     Cohort: competência dentro do mês final = venda nova; anterior = venda antiga. */
-  const mesFim=(b[1]||'').slice(0,7);
-  let totalCash=0,newCash=0;
+  /* Sales + Cash Collect: vêm do Ruche OS (v_sales_dinheiro e v_finance_receivables),
+     embutidos no payload na geração da página. Cohort = venda fechada no período. */
+  const S=Array.isArray(P.sales)?P.sales:null, RC=Array.isArray(P.recv)?P.recv:null;
+  let tcv=null,qty=null,newCash=null;
+  if(S){ tcv=0;qty=0;newCash=0;
+    for(const d of S){ if(!inR(d.cl,b))continue; tcv+=Number(d.tcv||0); newCash+=Number(d.cash||0); qty++; }
+    tcv=r2(tcv); newCash=r2(newCash); }
+  let totalCash=null;
+  if(RC){ totalCash=0; for(const x of RC) if(inR(x.pd,b)) totalCash+=Number(x.v||0); totalCash=r2(totalCash); }
+  const priorCash=(totalCash!=null&&newCash!=null)?r2(totalCash-newCash):null;
+  /* Cash Available = posição acumulada das contas de caixa até o fim do período
+     (todos os lançamentos com Payment Date <= fim, não só os do período). */
+  const caixaAcc={}; let caixa=0;
+  for(const r of P.mj){ if(!empOk(r))continue;
+    const ac=r.ac||''; if(!ac||/cart[ãa]o/i.test(ac))continue;
+    if(!r.pd||r.pd>b[1])continue;
+    const v=(r.i||0)-(r.o||0); caixaAcc[ac]=(caixaAcc[ac]||0)+v; caixa+=v; }
+  caixa=r2(caixa);
+  const contas=Object.keys(caixaAcc).map(k=>({a:k,v:r2(caixaAcc[k])})).sort((x,y)=>y.v-x.v);
+  /* contas que lançaram dentro do período, para o alerta de conciliação */
   const presentes={};
-  for(const r of P.mj){
-    if(!empOk(r))continue;
-    if(inR(r.pd,b)){
-      if(r.ac)presentes[r.ac]=1;
-      if(famOf(r.ct)==='1'){const v=r.i||0;totalCash+=v;if((r.pe||'').slice(0,7)===mesFim)newCash+=v;}
-    }
-  }
-  totalCash=r2(totalCash);newCash=r2(newCash);
-  const priorCash=r2(Math.max(0,totalCash-newCash));
-  /* Sales: automático se houver fonte de vendas; senão, valor informado */
-  let tcv=null,qty=null;
-  if(typeof P!=='undefined'&&Array.isArray(P.sales)){
-    tcv=0;qty=0;
-    for(const d of P.sales){const dt=d.closed_at||d.cl;if(!inR(dt,b))continue;tcv+=Number(d.tcv||d.tcv_contratado||0);qty++;}
-    tcv=r2(tcv);
-  }else{tcv=(CEOG.tcvA==null?null:Number(CEOG.tcvA));qty=(CEOG.qtyA==null?null:Number(CEOG.qtyA));}
-  /* proporcional do período escolhido */
+  for(const r of P.mj) if(empOk(r)&&inR(r.pd,b)&&r.ac) presentes[r.ac]=1;
   const d1=new Date(b[0]+'T00:00:00'),d2=new Date(b[1]+'T00:00:00');
   const dim=new Date(d2.getFullYear(),d2.getMonth()+1,0).getDate();
   const dias=Math.max(1,Math.round((d2-d1)/864e5)+1);
   const pace=Math.min(1,dias/dim);
   const faltando=CEO_CONTAS.filter(c=>!presentes[c]);
-  return {b,netRev,ebitda,custos,margem,totalCash,newCash,priorCash,tcv,qty,
-          caixa:r2(Number(CEOG.seed||0)+F.tot[2]),fdcNet:F.tot[2],
+  return {b,netRev,ebitda,custos,margem,totalCash,newCash,priorCash,tcv,qty,caixa,contas,
           pace,dias,dim,presentes:Object.keys(presentes),faltando,
-          temVendas:Array.isArray(P.sales)};
+          temVendas:!!S,temRecv:!!RC};
 }
-
 function renderCEO(){
-  const C=ceoCalc(), fI=n=>Math.round(n).toLocaleString('pt-BR'), fP=n=>Math.round(n)+'%';
+  const C=ceoCalc();
+  /* formatação: tudo em dólar com separador de milhar, igual à planilha */
+  const fI=n=>Math.round(n).toLocaleString('pt-BR');
+  const fP=n=>(Math.round(n*10)/10).toFixed(1).replace('.',',')+'%';
   const F={money:f0,int:fI,pct:fP};
   const L=[
-    {s:'📈 Sales'},
-    {k:'tcv',  n:'TCV / Sales MTD',  f:'money', a:C.tcv, src:C.temVendas?'Vendas':'a conectar', man:!C.temVendas, mk:'tcvA'},
-    {k:'qty',  n:'Sales Qty MTD',    f:'int',   a:C.qty, up:1, src:C.temVendas?'Vendas':'a conectar', man:!C.temVendas, mk:'qtyA'},
-    {s:'💰 Cash Collect'},
-    {k:'ccNew',  n:'Cash Collected — New Sales MTD',   f:'money', a:C.newCash,   src:'Master Journal'},
-    {k:'ccPrior',n:'Cash Collected — Prior Sales MTD', f:'money', a:C.priorCash, src:'Total − New'},
-    {k:'ccTot',  n:'Total Cash Collected MTD',         f:'money', a:C.totalCash, der:'g', tt:1, src:'Master Journal'},
-    {s:'🏦 Cash Position'},
-    {k:'cash', n:'Cash Available', f:'money', a:C.caixa, src:'Fluxo de Caixa'},
-    {s:'📊 Profitability'},
-    {k:'nr', n:'Net Revenue MTD',      f:'money', a:C.netRev, src:'DRE', w:C.faltando.length>0},
-    {k:'eb', n:'EBITDA MTD',           f:'money', a:C.ebitda, der:'eb', w:C.faltando.length>0},
-    {k:'mg', n:'EBITDA Margin MTD',    f:'pct',   a:C.margem, der:'mg', w:C.faltando.length>0},
-    {k:'tc', n:'Total Costs Booked MTD',f:'money',a:C.custos, der:'tc', cost:1, src:'DRE', w:C.faltando.length>0}
+    {s:'Sales'},
+    {k:'tcv',  n:'TCV / Sales MTD', f:'money', a:C.tcv},
+    {k:'qty',  n:'Sales Qty MTD',   f:'int',   a:C.qty, up:1},
+    {s:'Cash Collect'},
+    {k:'ccNew',  n:'Cash Collected — New Sales MTD',   f:'money', a:C.newCash},
+    {k:'ccPrior',n:'Cash Collected — Prior Sales MTD', f:'money', a:C.priorCash},
+    {k:'ccTot',  n:'Total Cash Collected MTD',         f:'money', a:C.totalCash, der:'g', tt:1},
+    {s:'Cash Position'},
+    {k:'cash', n:'Cash Available', f:'money', a:C.caixa, tt:1},
+    {s:'Profitability'},
+    {k:'nr', n:'Net Revenue MTD',       f:'money', a:C.netRev},
+    {k:'eb', n:'EBITDA MTD',            f:'money', a:C.ebitda, der:'eb'},
+    {k:'mg', n:'EBITDA Margin MTD',     f:'pct',   a:C.margem, der:'mg'},
+    {k:'tc', n:'Total Costs Booked MTD',f:'money', a:C.custos, der:'tc', cost:1, tt:1}
   ];
   const goal=k=> k==='ccTot'?(Number(CEOG.ccNew||0)+Number(CEOG.ccPrior||0))
                 : k==='tc' ?(Number(CEOG.nr||0)-Number(CEOG.eb||0))
@@ -651,34 +664,31 @@ function renderCEO(){
   for(const l of L){
     if(l.s){h+='<tr class="sec"><td colspan="6">'+l.s+'</td></tr>';continue;}
     const t=target(l.k), has=l.a!=null, gap=has?(l.cost?(t-l.a):(l.a-t)):null, vs=(has&&t)?gap/t*100:null;
-    const gDer=(l.k==='ccTot'||l.k==='tc');            /* meta derivada, como na planilha */
-    const tDer=(l.der==='eb'||l.der==='mg');            /* alvo derivado */
-    const tag='<span class="src'+(l.w?' w':'')+'">'+(tDer||gDer?'derivado':(l.src||''))+'</span>';
+    const gDer=(l.k==='ccTot'||l.k==='tc');     /* meta derivada, como na planilha */
     const gcell=gDer?'<td class="n">'+F[l.f](goal(l.k))+'</td>'
-      :'<td class="n"><input class="gi" type="number" data-g="'+l.k+'" value="'+(CEOG[l.k]||0)+'" aria-label="Meta de '+l.n+'"></td>';
-    const acell=has?F[l.f](l.a)
-      :'<input class="gi" type="number" data-a="'+l.mk+'" value="'+(CEOG[l.mk]==null?'':CEOG[l.mk])+'" placeholder="informar" aria-label="Valor de '+l.n+'">';
-    h+='<tr'+(l.tt?' class="tt"':'')+'><td>'+l.n+' '+tag+'</td>'+gcell+
-       '<td class="n">'+F[l.f](t)+'</td><td class="n">'+acell+'</td>'+
+      :'<td class="n"><input class="gi" type="text" inputmode="decimal" data-g="'+l.k+'" value="'+F[l.f](goal(l.k))+'" aria-label="Meta de '+l.n+'"></td>';
+    h+='<tr'+(l.tt?' class="tt"':'')+'><td>'+l.n+'</td>'+gcell+
+       '<td class="n">'+F[l.f](t)+'</td><td class="n"><b>'+(has?F[l.f](l.a):'—')+'</b></td>'+
        '<td class="n" style="color:'+(has?(gap>=0?'var(--up)':'var(--dn)'):'var(--mut)')+'">'+(has?((gap<0?'-':'')+F[l.f](Math.abs(gap))):'—')+'</td>'+
        '<td class="n" style="color:'+(has?(vs>=0?'var(--up)':'var(--dn)'):'var(--mut)')+'">'+(has?((vs<0?'-':'')+Math.abs(Math.round(vs))+'%'):'—')+'</td></tr>';
   }
   document.querySelector('#ceot tbody').innerHTML=h;
-  document.querySelectorAll('#ceot .gi[data-g]').forEach(e=>e.onchange=()=>{CEOG[e.dataset.g]=+e.value||0;ceoSave();renderCEO();});
-  document.querySelectorAll('#ceot .gi[data-a]').forEach(e=>e.onchange=()=>{CEOG[e.dataset.a]=e.value===''?null:(+e.value||0);ceoSave();renderCEO();});
+  const pN=v=>{v=String(v).replace(/[^\d,.-]/g,'').replace(/\./g,'').replace(',','.');const n=parseFloat(v);return isFinite(n)?n:0;};
+  document.querySelectorAll('#ceot .gi[data-g]').forEach(e=>e.onchange=()=>{CEOG[e.dataset.g]=pN(e.value);ceoSave();renderCEO();});
   document.getElementById('ceoroot').textContent='ROOT GOAL · EBITDA MARGIN '+(Number(CEOG.mg)||0).toFixed(1).replace('.',',')+'%';
-  document.getElementById('ceosub').textContent='Empresa: '+curEmp+' · '+curLabel()+' · valores em US$. Metas são manuais; o resto vem do Master Journal e recalcula sozinho.';
+  document.getElementById('ceosub').textContent=curEmp+' · '+curLabel()+' · US$';
   document.getElementById('ceopace').textContent=Math.round(C.pace*100)+'%';
   document.getElementById('ceopacei').textContent=C.dias+' de '+C.dim+' dias';
-  const sd=document.getElementById('ceoseed'); if(document.activeElement!==sd)sd.value=Number(CEOG.seed||0);
   const co=document.getElementById('ceoco');
+  let av='<p><b>Cash Available — posição por conta em '+brdt(C.b[1])+':</b> '+
+    C.contas.map(x=>esc(x.a)+' '+f0(x.v)).join(' · ')+'.</p>';
   if(C.faltando.length){
     co.style.borderLeftColor='var(--dn)';
-    co.innerHTML='<p><b>Conciliação do período incompleta.</b> Entraram: '+(C.presentes.join(', ')||'nenhuma conta')+
-      '. Faltam: <b>'+C.faltando.join(', ')+'</b>. Enquanto isso, Net Revenue, EBITDA e Total Costs ficam subestimados — principalmente os custos de folha, que entram pela Unicred.</p>';
+    co.innerHTML='<p><b>Conciliação do período incompleta.</b> Lançaram: '+(C.presentes.join(', ')||'nenhuma conta')+
+      '. Faltam: <b>'+C.faltando.join(', ')+'</b>. Net Revenue, EBITDA e Total Costs ficam subestimados — principalmente a folha, que entra pela Unicred.</p>'+av;
   }else{
     co.style.borderLeftColor='var(--acc)';
-    co.innerHTML='<p><b>Conciliação completa no período.</b> Todas as contas lançaram: '+C.presentes.join(', ')+'.</p>';
+    co.innerHTML='<p><b>Conciliação completa no período.</b> Todas as contas lançaram.</p>'+av;
   }
 }
 function renderActive(){const p=document.querySelector('.tb[aria-selected="true"]').dataset.p;if(p==='resumo')renderResumo();else if(p==='dre')renderDRE();else if(p==='fdc')renderFDC();else if(p==='mj'){renderLive();renderMJ();}else if(p==='ceo')renderCEO();}
@@ -690,13 +700,13 @@ function buildMsel(){
   const nome=m=>MESNOME[+m.slice(5,7)-1]+' / '+m.slice(0,4);
   const opts=meses.map(m=>'<option value="'+m+'"'+(curMode==='month'&&m===cur?' selected':'')+'>'+nome(m)+'</option>').join('');
   document.getElementById('msel').innerHTML=
-    '<select class="mesb" id="mesb" aria-label="Mês"><option value="">Escolher mês…</option>'+opts+'</select>'+
+    '<select class="mesb'+(curMode==="month"?' on':'')+'" id="mesb" aria-label="Mês"><option value="">Escolher mês…</option>'+opts+'</select>'+
     [3,7,14,30].map(d=>'<button class="mb" data-d="'+d+'" aria-pressed="false">'+d+'d</button>').join('')+
     '<button class="mb" data-m="custom"'+(curMode==='range'?' aria-pressed="true"':' aria-pressed="false"')+'>Personalizado</button>';
   const mesb=document.getElementById('mesb');
   mesb.addEventListener('change',()=>{
     if(!mesb.value)return;
-    curMode='month'; cur=mesb.value;
+    curMode='month'; cur=mesb.value; mesb.classList.add('on');
     document.getElementById('rangebox').style.display='none';
     document.querySelectorAll('#msel .mb').forEach(x=>x.setAttribute('aria-pressed','false'));
     renderActive();
@@ -713,11 +723,11 @@ function buildMsel(){
       const d=new Date(fim+'T00:00:00'); d.setDate(d.getDate()-(+b.dataset.d-1));
       let ini2=d.toISOString().slice(0,10); if(ini2<ini)ini2=ini;   /* não sai do mês */
       curStart=ini2; curEnd=fim; curMode='range';
-      mesb.value=m;
+      mesb.value=m; mesb.classList.add('on');   /* o preset é dentro do mês, então o mês segue verde */
       const rb=document.getElementById('rangebox'); rb.style.display='inline';
       document.getElementById('rstart').value=curStart; document.getElementById('rend').value=curEnd;
     }else{
-      curMode='range'; mesb.value='';
+      curMode='range'; mesb.value=''; mesb.classList.remove('on');
       const rb=document.getElementById('rangebox'); rb.style.display='inline';
       document.getElementById('rstart').value=curStart; document.getElementById('rend').value=curEnd;
     }
@@ -728,7 +738,6 @@ buildMsel();
 document.getElementById('rstart').addEventListener('change',e=>{curStart=e.target.value||curStart;curMode='range';renderActive();});
 document.getElementById('rend').addEventListener('change',e=>{curEnd=e.target.value||curEnd;curMode='range';renderActive();});
 const esel=document.getElementById('esel');esel.innerHTML='<option>Ruche Digital</option><option>Floor to Door</option><option>Todos</option>';esel.value=curEmp;esel.addEventListener('change',()=>{curEmp=esel.value;renderActive();});
-document.getElementById('ceoseed').addEventListener('input',e=>{CEOG.seed=+e.target.value||0;ceoSave();renderCEO();});
 document.getElementById('ceoreset').addEventListener('click',()=>{CEOG=Object.assign({},CEO_DEF);ceoSave();renderCEO();});
 document.querySelectorAll('.tb').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.tb').forEach(x=>x.setAttribute('aria-selected',x===b?'true':'false'));document.querySelectorAll('.pane').forEach(p=>p.hidden=(p.id!=='pane-'+b.dataset.p));if(b.dataset.p==='mj'&&!window.__mjInit){window.__mjInit=1;initMJ();}else renderActive();}));
 function initMJ(){document.getElementById('mjq').addEventListener('input',()=>renderMJ());
