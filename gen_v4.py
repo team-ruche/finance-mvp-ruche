@@ -241,9 +241,14 @@ try{IMPORTS=JSON.parse(localStorage.getItem('ruche_mj_imports')||'[]');}catch(e)
 IMPORTS.forEach(r=>{r._imp=true;P.mj.push(r);});
 P.mj.forEach(r=>{if(!r.emp)r.emp='Ruche Digital';if(r.av===undefined)r.av=r.pd;const e=EDITS[r.id];if(e)for(const k in e)r[k]=e[k];});
 let nextId=P.mj.reduce((m,r)=>Math.max(m,r.id),0)+1;
-const MONTHS=['2026-05','2026-06','2026-07','2026-08'];
-const MN={'2026-05':'MAIO','2026-06':'JUNHO','2026-07':'JULHO','2026-08':'AGOSTO'};
-const MSH={'2026-05':'MAI','2026-06':'JUN','2026-07':'JUL','2026-08':'AGO'};
+const _MS=['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+const _MF=['JANEIRO','FEVEREIRO','MARÇO','ABRIL','MAIO','JUNHO','JULHO','AGOSTO','SETEMBRO','OUTUBRO','NOVEMBRO','DEZEMBRO'];
+const _MCNT=(function(){const c={};for(const r of P.mj){const m=(r.pe||'').slice(0,7);if(m)c[m]=(c[m]||0)+1;}return c;})();
+const MONTHS=(function(){const l=Object.keys(_MCNT).filter(m=>_MCNT[m]>=10).sort();return l.length?l:['2026-07'];})();
+/* mês de abertura: o último com volume real (evita abrir num mês recém-começado) */
+const _MDEF=(function(){for(let i=MONTHS.length-1;i>=0;i--)if(_MCNT[MONTHS[i]]>=50)return MONTHS[i];return MONTHS[MONTHS.length-1];})();
+const MN={};MONTHS.forEach(m=>MN[m]=_MF[+m.slice(5,7)-1]);
+const MSH={};MONTHS.forEach(m=>MSH[m]=_MS[+m.slice(5,7)-1]);
 const RECS=['Yes','No','Patrick Verificar','Cris Verificar','Em Aberto'];
 const ACCCOL={'Stripe':'#635bff','Asaas':'#2f7de0','BoA':'#d64b40','Unicred - CC':'#8a8446','Unicred - Cartão':'#9a9350','Unicred - Invest':'#b3ac66','C6 - CC':'#c3c7cf','C6 - Cartão':'#242a36','PayPal':'#83c3ec','Payoneer':'#ec5f2e','Wise - Cris':'#4f9e6a','Wise - Ruche':'#38a597'};
 const EMPCOL={'Ruche Digital':'#e6c136','Floor to Door':'#3f7fc4','Revenue Share':'#46a35f'};
@@ -254,7 +259,7 @@ function famColorSolid(v){var m=String(v==null?'':v).match(/^\s*(\d+)/);return m
 function pillCt(v){if(!v)return '';var bg=ctColor(v)||'#8a8f98',fg=lum(bg)>150?'#15181e':'#fff';return '<span class="pill" style="background:'+bg+';color:'+fg+'">'+esc(v)+'</span>';}
 function lum(hex){hex=String(hex).replace('#','');if(hex.length<6)return 128;var r=parseInt(hex.substr(0,2),16),g=parseInt(hex.substr(2,2),16),b=parseInt(hex.substr(4,2),16);return 0.299*r+0.587*g+0.114*b;}
 function pill(v,map){if(!v)return '';var bg=map[v]||'#8a8f98',fg=lum(bg)>150?'#15181e':'#fff';return '<span class="pill" style="background:'+bg+';color:'+fg+'">'+esc(v)+'</span>';}
-let cur='2026-07',curEmp='Ruche Digital',curMode='month',curStart='2026-07-01',curEnd='2026-07-31';
+let cur=_MDEF,curEmp='Ruche Digital',curMode='month',curStart=cur+'-01',curEnd=cur+'-'+String(new Date(+cur.slice(0,4),+cur.slice(5,7),0).getDate()).padStart(2,'0');
 const META_REV=61263.52;
 const codeOf=s=>{const m=String(s).match(/^\s*([\d.]+)/);return m?m[1].replace(/\.+$/,''):'';};
 const famOf=s=>{const c=codeOf(s);return c?c.split('.')[0]:'';};
@@ -697,14 +702,18 @@ function buildMsel(){
     renderActive();
   });
   // última data com movimento, para os presets de dias caírem onde há dado
-  function ultimaData(){ let u=''; for(const r of P.mj){ const d=r.pd||r.pe; if(d&&d>u)u=d; } return u||new Date().toISOString().slice(0,10); }
+  /* os presets usam o mês que está selecionado (no seletor ou nas datas) */
+  function mesBase(){ return curMode==='month'?cur:((curEnd||curStart||'').slice(0,7)||cur); }
+  function fimDoMes(m){ let u=''; for(const r of P.mj){ const d=r.pd||r.pe; if(d&&d.slice(0,7)===m&&d>u)u=d; } return u||monthB(m)[1]; }
   document.querySelectorAll('#msel .mb').forEach(b=>b.addEventListener('click',()=>{
     document.querySelectorAll('#msel .mb').forEach(x=>x.setAttribute('aria-pressed','false'));
     b.setAttribute('aria-pressed','true');
     if(b.dataset.d){
-      const fim=ultimaData(), d=new Date(fim+'T00:00:00'); d.setDate(d.getDate()-(+b.dataset.d-1));
-      curStart=d.toISOString().slice(0,10); curEnd=fim; curMode='range';
-      mesb.value='';
+      const m=mesBase(), fim=fimDoMes(m), ini=monthB(m)[0];
+      const d=new Date(fim+'T00:00:00'); d.setDate(d.getDate()-(+b.dataset.d-1));
+      let ini2=d.toISOString().slice(0,10); if(ini2<ini)ini2=ini;   /* não sai do mês */
+      curStart=ini2; curEnd=fim; curMode='range';
+      mesb.value=m;
       const rb=document.getElementById('rangebox'); rb.style.display='inline';
       document.getElementById('rstart').value=curStart; document.getElementById('rend').value=curEnd;
     }else{
