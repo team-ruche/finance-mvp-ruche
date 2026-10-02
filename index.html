@@ -48,7 +48,21 @@ svg{display:block;width:100%;height:auto}.gl{stroke:var(--ln);stroke-width:1}.ax
 .hb{display:grid;gap:8px;margin-top:10px}.hr{display:grid;grid-template-columns:1fr auto;gap:9px;align-items:center;font-size:13px}.hr .tr{grid-column:1/-1;height:9px;background:var(--sunk);border-radius:999px;overflow:hidden}.hr .tr i{display:block;height:100%;border-radius:999px}.hv{font-size:12px;color:var(--mut);font-variant-numeric:tabular-nums}
 .txr{display:grid;grid-template-columns:32px 1fr auto;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--ln);font-size:13px}.txr:last-child{border-bottom:none}.txd{font-size:11px;color:var(--fnt);text-align:center;background:var(--sunk);border-radius:6px;padding:3px 0;font-weight:700}.txn{font-weight:600}.txc{font-size:11px;color:var(--mut)}.txv{font-variant-numeric:tabular-nums;font-weight:600}
 .gauge{height:24px;background:var(--sunk);border-radius:8px;position:relative;overflow:hidden;margin-top:10px}.gauge i{display:block;height:100%;border-radius:8px}.gauge .mk{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--goal)}.gauge .mkl{position:absolute;top:-18px;font-size:10px;color:var(--goal);font-weight:700;transform:translateX(-50%)}
-.co{background:var(--asf);border:1px solid var(--ln);border-left:3px solid var(--acc);border-radius:10px;padding:13px 16px;margin-top:13px}.co.r{background:var(--dns);border-left-color:var(--dn)}.co p{margin:0;font-size:13.5px}.co p+p{margin-top:7px}
+.co{background:var(--asf);border:1px solid var(--ln);border-left:3px solid var(--acc);border-radius:10px;padding:13px 16px;margin-top:13px}
+.ceobar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 12px}
+.ceopace{display:inline-flex;align-items:baseline;gap:6px;font-size:12px;color:var(--mut);background:var(--asf);border:1px solid var(--acc);padding:4px 11px;border-radius:999px}
+.ceopace b{font-size:14px;color:var(--acc)} .ceopace i{font-style:normal;font-size:11px}
+.ceoseed{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--mut)}
+.ceoseed input{width:118px;text-align:right;font-variant-numeric:tabular-nums;background:var(--bg);color:var(--fnt);border:1px solid var(--ln);border-radius:8px;padding:4px 8px;font-size:13px}
+.ceobtn{background:var(--asf);color:var(--mut);border:1px solid var(--ln);border-radius:8px;padding:4px 11px;font-size:12px;cursor:pointer}
+.ceobtn:hover{color:var(--fnt);border-color:var(--acc)}
+#ceot .gi{width:104px;text-align:right;font-variant-numeric:tabular-nums;background:var(--bg);color:var(--acc);font-weight:600;border:1px solid var(--ln);border-radius:7px;padding:3px 7px;font-size:13px}
+#ceot .gi:focus{outline:2px solid var(--acc);outline-offset:1px}
+#ceot tr.sec td{background:var(--sunk);font-weight:700;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut)}
+#ceot tr.tt td{font-weight:700;background:var(--sunk)}
+#ceot .src{display:inline-block;font-size:10px;font-weight:600;padding:1px 6px;border-radius:999px;background:var(--sunk);color:var(--mut);margin-left:6px;white-space:nowrap}
+#ceot .src.w{border:1px solid var(--dn);color:var(--dn)}
+#ceoroot{font-size:12px;font-weight:600;color:var(--acc);background:var(--asf);border:1px solid var(--acc);padding:4px 10px;border-radius:999px;white-space:nowrap}.co.r{background:var(--dns);border-left-color:var(--dn)}.co p{margin:0;font-size:13.5px}.co p+p{margin-top:7px}
 .stw{overflow-x:auto;border:1px solid var(--ln);border-radius:12px;background:var(--card);box-shadow:var(--sh);margin-top:12px;max-width:100%}
 table.st{border-collapse:collapse;width:100%;min-width:640px;font-size:13px}table.st th,table.st td{padding:8px 12px;border-bottom:1px solid var(--ln);text-align:left}table.st thead th{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);font-weight:700;background:var(--sunk);position:sticky;top:0}table.st td.n,table.st th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}table.st tr.tot td{font-weight:700;background:var(--asf);border-top:1px solid var(--ln2)}table.st tr.sub td{font-weight:600}table.st tr.item td:first-child{padding-left:28px;color:var(--mut)}table.st tr:last-child td{border-bottom:none}
 .cd{font-family:var(--sm);font-size:11px;color:var(--fnt);margin-right:6px}.neg{color:var(--dn)}.pos{color:var(--up)}
@@ -111,6 +125,7 @@ table.mj input.ce,table.mj select.ce{font:12px var(--ss);color:var(--ink);backgr
   <button class="tb" role="tab" data-p="dre" aria-selected="false">DRE</button>
   <button class="tb" role="tab" data-p="fdc" aria-selected="false">Fluxo de Caixa</button>
   <button class="tb" role="tab" data-p="mj" aria-selected="false">Master Journal</button>
+  <button class="tb" role="tab" data-p="ceo" aria-selected="false">CEO Snapshot</button>
 </div>
 
 <div class="pane" id="pane-resumo">
@@ -138,6 +153,19 @@ table.mj input.ce,table.mj select.ce{font:12px var(--ss);color:var(--ink);backgr
     <div class="natg" id="natg"></div>
     <div class="stw"><table class="st" id="fdct"><thead><tr><th>Conta de caixa</th><th class="n">Entradas</th><th class="n">Saídas</th><th class="n">Líquido</th></tr></thead><tbody></tbody></table></div>
     <div class="co"><p id="transfnote"></p></div></sec>
+</div>
+
+<div class="pane" id="pane-ceo" hidden>
+  <sec><div class="sh2"><h2>CEO Snapshot</h2><div class="r" id="ceoroot"></div></div>
+    <p class="sub" id="ceosub"></p>
+    <div class="ceobar">
+      <span class="ceopace">Proporcional <b id="ceopace">—</b> <i id="ceopacei"></i></span>
+      <label class="ceoseed">Saldo inicial de caixa <input type="number" id="ceoseed" step="0.01"></label>
+      <button class="ceobtn" type="button" id="ceoreset">Restaurar metas</button>
+    </div>
+    <div class="stw"><table class="st" id="ceot"><thead><tr><th>Métrica</th><th class="n">Monthly Goal</th><th class="n">MTD Target</th><th class="n">MTD Actual</th><th class="n">Gap</th><th class="n">vs MTD</th></tr></thead><tbody></tbody></table></div>
+    <div class="co" id="ceoco"></div>
+  </sec>
 </div>
 
 <div class="pane" id="pane-mj" hidden>
@@ -533,13 +561,124 @@ function closeImport(){document.getElementById('impmodal').style.display='none';
 
 /* nav */
 function renderResumo(){kpis();chart1();panels();}
-function renderActive(){const p=document.querySelector('.tb[aria-selected="true"]').dataset.p;if(p==='resumo')renderResumo();else if(p==='dre')renderDRE();else if(p==='fdc')renderFDC();else if(p==='mj'){renderLive();renderMJ();}}
+
+/* ======================= CEO SNAPSHOT ======================= */
+/* Tudo sai do Master Journal (P.mj) + DRE/FDC já calculados. Respeita o filtro
+   de período e empresa do topo. Metas são manuais e ficam salvas no navegador.
+   Sales (TCV/Qty) usa P.sales automaticamente assim que essa fonte existir. */
+const CEO_CONTAS=['Stripe','Asaas','BoA','Unicred - CC','Unicred - Cartão','Unicred - Invest','C6 - CC','C6 - Cartão','PayPal','Payoneer','Wise - Cris','Wise - Ruche'];
+const CEO_DEF={tcv:60000,qty:32,ccNew:27972,ccPrior:11003,cash:73944,nr:37984,eb:5698,mg:15,seed:0,tcvA:null,qtyA:null};
+let CEOG=(function(){try{return Object.assign({},CEO_DEF,JSON.parse(localStorage.getItem('ruche_ceo')||'{}'));}catch(e){return Object.assign({},CEO_DEF);}})();
+function ceoSave(){try{localStorage.setItem('ruche_ceo',JSON.stringify(CEOG));}catch(e){}}
+
+function ceoCalc(){
+  const b=curBounds(), D=dreCur(), F=fdcCur(), a=D.agg;
+  const netRev=a.net_revenue, ebitda=a.ebitda;
+  const custos=r2(a.cogs+a.fixed+a.opex);
+  const margem=netRev?r2(ebitda/netRev*100):0;
+  /* Cash Collected: entradas de receita (família 1) pela data de pagamento.
+     Cohort: competência dentro do mês final = venda nova; anterior = venda antiga. */
+  const mesFim=(b[1]||'').slice(0,7);
+  let totalCash=0,newCash=0;
+  const presentes={};
+  for(const r of P.mj){
+    if(!empOk(r))continue;
+    if(inR(r.pd,b)){
+      if(r.ac)presentes[r.ac]=1;
+      if(famOf(r.ct)==='1'){const v=r.i||0;totalCash+=v;if((r.pe||'').slice(0,7)===mesFim)newCash+=v;}
+    }
+  }
+  totalCash=r2(totalCash);newCash=r2(newCash);
+  const priorCash=r2(Math.max(0,totalCash-newCash));
+  /* Sales: automático se houver fonte de vendas; senão, valor informado */
+  let tcv=null,qty=null;
+  if(typeof P!=='undefined'&&Array.isArray(P.sales)){
+    tcv=0;qty=0;
+    for(const d of P.sales){const dt=d.closed_at||d.cl;if(!inR(dt,b))continue;tcv+=Number(d.tcv||d.tcv_contratado||0);qty++;}
+    tcv=r2(tcv);
+  }else{tcv=(CEOG.tcvA==null?null:Number(CEOG.tcvA));qty=(CEOG.qtyA==null?null:Number(CEOG.qtyA));}
+  /* proporcional do período escolhido */
+  const d1=new Date(b[0]+'T00:00:00'),d2=new Date(b[1]+'T00:00:00');
+  const dim=new Date(d2.getFullYear(),d2.getMonth()+1,0).getDate();
+  const dias=Math.max(1,Math.round((d2-d1)/864e5)+1);
+  const pace=Math.min(1,dias/dim);
+  const faltando=CEO_CONTAS.filter(c=>!presentes[c]);
+  return {b,netRev,ebitda,custos,margem,totalCash,newCash,priorCash,tcv,qty,
+          caixa:r2(Number(CEOG.seed||0)+F.tot[2]),fdcNet:F.tot[2],
+          pace,dias,dim,presentes:Object.keys(presentes),faltando,
+          temVendas:Array.isArray(P.sales)};
+}
+
+function renderCEO(){
+  const C=ceoCalc(), fI=n=>Math.round(n).toLocaleString('pt-BR'), fP=n=>Math.round(n)+'%';
+  const F={money:f0,int:fI,pct:fP};
+  const L=[
+    {s:'📈 Sales'},
+    {k:'tcv',  n:'TCV / Sales MTD',  f:'money', a:C.tcv, src:C.temVendas?'Vendas':'a conectar', man:!C.temVendas, mk:'tcvA'},
+    {k:'qty',  n:'Sales Qty MTD',    f:'int',   a:C.qty, up:1, src:C.temVendas?'Vendas':'a conectar', man:!C.temVendas, mk:'qtyA'},
+    {s:'💰 Cash Collect'},
+    {k:'ccNew',  n:'Cash Collected — New Sales MTD',   f:'money', a:C.newCash,   src:'Master Journal'},
+    {k:'ccPrior',n:'Cash Collected — Prior Sales MTD', f:'money', a:C.priorCash, src:'Total − New'},
+    {k:'ccTot',  n:'Total Cash Collected MTD',         f:'money', a:C.totalCash, der:'g', tt:1, src:'Master Journal'},
+    {s:'🏦 Cash Position'},
+    {k:'cash', n:'Cash Available', f:'money', a:C.caixa, src:'Fluxo de Caixa'},
+    {s:'📊 Profitability'},
+    {k:'nr', n:'Net Revenue MTD',      f:'money', a:C.netRev, src:'DRE', w:C.faltando.length>0},
+    {k:'eb', n:'EBITDA MTD',           f:'money', a:C.ebitda, der:'eb', w:C.faltando.length>0},
+    {k:'mg', n:'EBITDA Margin MTD',    f:'pct',   a:C.margem, der:'mg', w:C.faltando.length>0},
+    {k:'tc', n:'Total Costs Booked MTD',f:'money',a:C.custos, der:'tc', cost:1, src:'DRE', w:C.faltando.length>0}
+  ];
+  const goal=k=> k==='ccTot'?(Number(CEOG.ccNew||0)+Number(CEOG.ccPrior||0))
+                : k==='tc' ?(Number(CEOG.nr||0)-Number(CEOG.eb||0))
+                : Number(CEOG[k]||0);
+  const target=k=>{
+    if(k==='eb')return target('nr')-target('tc');
+    if(k==='mg'){const nr=target('nr');return nr?target('eb')/nr*100:0;}
+    const t=goal(k)*C.pace; return k==='qty'?Math.ceil(t):t;
+  };
+  let h='';
+  for(const l of L){
+    if(l.s){h+='<tr class="sec"><td colspan="6">'+l.s+'</td></tr>';continue;}
+    const t=target(l.k), has=l.a!=null, gap=has?(l.cost?(t-l.a):(l.a-t)):null, vs=(has&&t)?gap/t*100:null;
+    const gDer=(l.k==='ccTot'||l.k==='tc');            /* meta derivada, como na planilha */
+    const tDer=(l.der==='eb'||l.der==='mg');            /* alvo derivado */
+    const tag='<span class="src'+(l.w?' w':'')+'">'+(tDer||gDer?'derivado':(l.src||''))+'</span>';
+    const gcell=gDer?'<td class="n">'+F[l.f](goal(l.k))+'</td>'
+      :'<td class="n"><input class="gi" type="number" data-g="'+l.k+'" value="'+(CEOG[l.k]||0)+'" aria-label="Meta de '+l.n+'"></td>';
+    const acell=has?F[l.f](l.a)
+      :'<input class="gi" type="number" data-a="'+l.mk+'" value="'+(CEOG[l.mk]==null?'':CEOG[l.mk])+'" placeholder="informar" aria-label="Valor de '+l.n+'">';
+    h+='<tr'+(l.tt?' class="tt"':'')+'><td>'+l.n+' '+tag+'</td>'+gcell+
+       '<td class="n">'+F[l.f](t)+'</td><td class="n">'+acell+'</td>'+
+       '<td class="n" style="color:'+(has?(gap>=0?'var(--up)':'var(--dn)'):'var(--mut)')+'">'+(has?((gap<0?'-':'')+F[l.f](Math.abs(gap))):'—')+'</td>'+
+       '<td class="n" style="color:'+(has?(vs>=0?'var(--up)':'var(--dn)'):'var(--mut)')+'">'+(has?((vs<0?'-':'')+Math.abs(Math.round(vs))+'%'):'—')+'</td></tr>';
+  }
+  document.querySelector('#ceot tbody').innerHTML=h;
+  document.querySelectorAll('#ceot .gi[data-g]').forEach(e=>e.onchange=()=>{CEOG[e.dataset.g]=+e.value||0;ceoSave();renderCEO();});
+  document.querySelectorAll('#ceot .gi[data-a]').forEach(e=>e.onchange=()=>{CEOG[e.dataset.a]=e.value===''?null:(+e.value||0);ceoSave();renderCEO();});
+  document.getElementById('ceoroot').textContent='ROOT GOAL · EBITDA MARGIN '+(Number(CEOG.mg)||0).toFixed(1).replace('.',',')+'%';
+  document.getElementById('ceosub').textContent='Empresa: '+curEmp+' · '+curLabel()+' · valores em US$. Metas são manuais; o resto vem do Master Journal e recalcula sozinho.';
+  document.getElementById('ceopace').textContent=Math.round(C.pace*100)+'%';
+  document.getElementById('ceopacei').textContent=C.dias+' de '+C.dim+' dias';
+  const sd=document.getElementById('ceoseed'); if(document.activeElement!==sd)sd.value=Number(CEOG.seed||0);
+  const co=document.getElementById('ceoco');
+  if(C.faltando.length){
+    co.style.borderLeftColor='var(--dn)';
+    co.innerHTML='<p><b>Conciliação do período incompleta.</b> Entraram: '+(C.presentes.join(', ')||'nenhuma conta')+
+      '. Faltam: <b>'+C.faltando.join(', ')+'</b>. Enquanto isso, Net Revenue, EBITDA e Total Costs ficam subestimados — principalmente os custos de folha, que entram pela Unicred.</p>';
+  }else{
+    co.style.borderLeftColor='var(--acc)';
+    co.innerHTML='<p><b>Conciliação completa no período.</b> Todas as contas lançaram: '+C.presentes.join(', ')+'.</p>';
+  }
+}
+function renderActive(){const p=document.querySelector('.tb[aria-selected="true"]').dataset.p;if(p==='resumo')renderResumo();else if(p==='dre')renderDRE();else if(p==='fdc')renderFDC();else if(p==='mj'){renderLive();renderMJ();}else if(p==='ceo')renderCEO();}
 function buildMsel(){document.getElementById('msel').innerHTML=MONTHS.map(m=>'<button class="mb" data-m="'+m+'"'+(curMode==='month'&&m===cur?' aria-pressed="true"':' aria-pressed="false"')+'>'+MSH[m]+'</button>').join('')+'<button class="mb" data-m="custom"'+(curMode==='range'?' aria-pressed="true"':' aria-pressed="false"')+'>Personalizado</button>';
   document.querySelectorAll('#msel .mb').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.m==='custom'){curMode='range';document.getElementById('rangebox').style.display='inline';document.getElementById('rstart').value=curStart;document.getElementById('rend').value=curEnd;}else{curMode='month';cur=b.dataset.m;document.getElementById('rangebox').style.display='none';}document.querySelectorAll('#msel .mb').forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));renderActive();}));}
 buildMsel();
 document.getElementById('rstart').addEventListener('change',e=>{curStart=e.target.value||curStart;curMode='range';renderActive();});
 document.getElementById('rend').addEventListener('change',e=>{curEnd=e.target.value||curEnd;curMode='range';renderActive();});
 const esel=document.getElementById('esel');esel.innerHTML='<option>Ruche Digital</option><option>Floor to Door</option><option>Todos</option>';esel.value=curEmp;esel.addEventListener('change',()=>{curEmp=esel.value;renderActive();});
+document.getElementById('ceoseed').addEventListener('input',e=>{CEOG.seed=+e.target.value||0;ceoSave();renderCEO();});
+document.getElementById('ceoreset').addEventListener('click',()=>{CEOG=Object.assign({},CEO_DEF);ceoSave();renderCEO();});
 document.querySelectorAll('.tb').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.tb').forEach(x=>x.setAttribute('aria-selected',x===b?'true':'false'));document.querySelectorAll('.pane').forEach(p=>p.hidden=(p.id!=='pane-'+b.dataset.p));if(b.dataset.p==='mj'&&!window.__mjInit){window.__mjInit=1;initMJ();}else renderActive();}));
 function initMJ(){document.getElementById('mjq').addEventListener('input',()=>renderMJ());
   const fb=document.getElementById('mjf');fb.addEventListener('click',()=>{mjOnlyBad=!mjOnlyBad;fb.setAttribute('aria-pressed',mjOnlyBad);fb.style.background=mjOnlyBad?cv('--wrs'):'';fb.style.color=mjOnlyBad?cv('--wr'):'';renderMJ();});
