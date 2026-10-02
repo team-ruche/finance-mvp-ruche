@@ -769,10 +769,10 @@ CDN_EXTRA=('<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/
   '<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>')
 if _xlsx:
 # 1) artifact (parsing local, SheetJS inline, sem webhook, sem libs externas por causa do CSP)
-    p1="/Users/apple/Desktop/stripe-conciliacao/central-financeira-ruche.html"
+    p1=f"{SP}/artifact.html"
     open(p1,"w",encoding="utf-8").write(base.replace('__WEBHOOK__','null').replace('__XLSXLOADER__','<script>'+_xlsx+'</script>').replace('__EXTRALIBS__',''))
     print("gerado (artifact):",round(os.path.getsize(p1)/1024),"KB")
 # 2) hospedado (chama o n8n; SheetJS+pdf.js+Tesseract via CDN — hospedado não tem CSP)
-p2="/Users/apple/Desktop/stripe-conciliacao/central-financeira-ruche-hosted.html"
+p2=f"{SP}/index.html"   # a página publicada no GitHub Pages
 open(p2,"w",encoding="utf-8").write(base.replace('__WEBHOOK__', '"'+WEBHOOK_URL+'"').replace('__XLSXLOADER__',CDN_XLSX).replace('__EXTRALIBS__',CDN_EXTRA))
 print("gerado (hosted):",round(os.path.getsize(p2)/1024),"KB")
